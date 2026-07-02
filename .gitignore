@@ -11,6 +11,8 @@
 
 # debug
 npm-debug.log*
+dev.log
+build.log
 
 # env files
 .env
