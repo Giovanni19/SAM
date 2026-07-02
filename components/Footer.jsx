@@ -20,7 +20,7 @@ export default function Footer() {
           <h4 className="font-display text-sm font-semibold text-sam-paper">Esplora</h4>
           <ul className="mt-3 space-y-2 text-sm text-sam-paper/70">
             <li><Link href="/spaces" className="hover:text-sam-paper">Tutti gli spazi</Link></li>
-            <li><Link href="/spaces?view=map" className="hover:text-sam-paper">Mappa</Link></li>
+            <li><Link href="/map" className="hover:text-sam-paper">Mappa</Link></li>
             <li><Link href="/favorites" className="hover:text-sam-paper">Preferiti</Link></li>
           </ul>
         </div>
