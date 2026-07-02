@@ -1,8 +1,14 @@
 "use client";
 
-// Controllo di ricerca: menu a tendina Zona + Tipo e pulsante "Cerca".
-// La barra di testo libera è stata rimossa (verrà eventualmente aggiunta più avanti).
-// È un componente controllato: lo stato vive in SpacesExplorer.
+import { AMENITY_FILTERS } from "@/lib/utils";
+
+// Controllo di ricerca: Zona + Tipo, più i filtri per amenità (WiFi, Prese,
+// Sedute, Rumore, Permanenza) così l'utente può restringere la ricerca a
+// quello che gli serve davvero. Componente controllato: lo stato vive nel
+// genitore (SpacesExplorer / MapView).
+
+const selectClass =
+  "w-full rounded-full border border-sam-cream bg-sam-paper px-4 py-2.5 text-sm outline-none focus:border-sam-green";
 
 export default function SearchBar({
   zones = [],
@@ -11,6 +17,8 @@ export default function SearchBar({
   type,
   onZoneChange,
   onTypeChange,
+  filters = {},
+  onFilterChange,
   onSearch,
   onReset,
   canReset = false,
@@ -21,37 +29,50 @@ export default function SearchBar({
         e.preventDefault();
         onSearch?.();
       }}
-      className="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-card sm:flex-row sm:items-end"
+      className="rounded-2xl bg-white p-4 shadow-card"
     >
-      <label className="flex-1">
-        <span className="mb-1 block text-xs font-semibold text-sam-green">Zona</span>
-        <select
-          value={zone}
-          onChange={(e) => onZoneChange?.(e.target.value)}
-          className="w-full rounded-full border border-sam-cream bg-sam-paper px-4 py-2.5 text-sm outline-none focus:border-sam-green"
-        >
-          <option value="">Tutte le zone</option>
-          {zones.map((z) => (
-            <option key={z} value={z}>{z}</option>
-          ))}
-        </select>
-      </label>
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <label className="flex-1">
+          <span className="mb-1 block text-xs font-semibold text-sam-green">Zona</span>
+          <select value={zone} onChange={(e) => onZoneChange?.(e.target.value)} className={selectClass}>
+            <option value="">Tutte le zone</option>
+            {zones.map((z) => (
+              <option key={z} value={z}>{z}</option>
+            ))}
+          </select>
+        </label>
 
-      <label className="flex-1">
-        <span className="mb-1 block text-xs font-semibold text-sam-green">Tipo di spazio</span>
-        <select
-          value={type}
-          onChange={(e) => onTypeChange?.(e.target.value)}
-          className="w-full rounded-full border border-sam-cream bg-sam-paper px-4 py-2.5 text-sm outline-none focus:border-sam-green"
-        >
-          <option value="">Tutti i tipi</option>
-          {types.map((t) => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
-      </label>
+        <label className="flex-1">
+          <span className="mb-1 block text-xs font-semibold text-sam-green">Tipo di spazio</span>
+          <select value={type} onChange={(e) => onTypeChange?.(e.target.value)} className={selectClass}>
+            <option value="">Tutti i tipi</option>
+            {types.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+        </label>
+      </div>
 
-      <div className="flex gap-2">
+      {/* Filtri per amenità: personalizza in base a cosa ti serve davvero */}
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {AMENITY_FILTERS.map(({ key, label, map }) => (
+          <label key={key}>
+            <span className="mb-1 block text-xs font-semibold text-sam-green">{label}</span>
+            <select
+              value={filters[key] || ""}
+              onChange={(e) => onFilterChange?.(key, e.target.value)}
+              className={selectClass}
+            >
+              <option value="">Indifferente</option>
+              {Object.entries(map).map(([value, meta]) => (
+                <option key={value} value={value}>{meta.label}</option>
+              ))}
+            </select>
+          </label>
+        ))}
+      </div>
+
+      <div className="mt-3 flex gap-2">
         <button type="submit" className="btn-primary">
           🔍 Cerca
         </button>

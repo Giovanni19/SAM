@@ -3,8 +3,10 @@
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { typeMeta, distanceKm, formatDistance, getZones, getTypes } from "@/lib/utils";
+import { typeMeta, distanceKm, formatDistance, getZones, getTypes, AMENITY_FILTERS } from "@/lib/utils";
 import SearchBar from "@/components/SearchBar";
+
+const EMPTY_AMENITY_FILTERS = Object.fromEntries(AMENITY_FILTERS.map((f) => [f.key, ""]));
 
 // Leaflet usa `window`: carichiamo la mappa solo lato client (niente SSR).
 const LeafletMap = dynamic(() => import("./LeafletMap"), {
@@ -22,13 +24,14 @@ export default function MapView({ spaces = [] }) {
 
   const [pendingZone, setPendingZone] = useState("");
   const [pendingType, setPendingType] = useState("");
-  const [applied, setApplied] = useState({ zone: "", type: "" });
+  const [pendingFilters, setPendingFilters] = useState(EMPTY_AMENITY_FILTERS);
+  const [applied, setApplied] = useState({ zone: "", type: "", ...EMPTY_AMENITY_FILTERS });
 
   const filtered = useMemo(() => {
     return spaces.filter((s) => {
       if (applied.zone && s.zone !== applied.zone) return false;
       if (applied.type && s.type !== applied.type) return false;
-      return true;
+      return AMENITY_FILTERS.every(({ key }) => !applied[key] || s[key] === applied[key]);
     });
   }, [spaces, applied]);
 
@@ -75,13 +78,18 @@ export default function MapView({ spaces = [] }) {
         type={pendingType}
         onZoneChange={setPendingZone}
         onTypeChange={setPendingType}
-        onSearch={() => setApplied({ zone: pendingZone, type: pendingType })}
+        filters={pendingFilters}
+        onFilterChange={(key, value) => setPendingFilters((f) => ({ ...f, [key]: value }))}
+        onSearch={() => setApplied({ zone: pendingZone, type: pendingType, ...pendingFilters })}
         onReset={() => {
           setPendingZone("");
           setPendingType("");
-          setApplied({ zone: "", type: "" });
+          setPendingFilters(EMPTY_AMENITY_FILTERS);
+          setApplied({ zone: "", type: "", ...EMPTY_AMENITY_FILTERS });
         }}
-        canReset={Boolean(applied.zone || applied.type)}
+        canReset={Boolean(
+          applied.zone || applied.type || AMENITY_FILTERS.some(({ key }) => applied[key])
+        )}
       />
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_320px]">

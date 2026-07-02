@@ -17,15 +17,29 @@ export default function SpaceCard({ space }) {
       href={`/spaces/${space.id}`}
       className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-card transition hover:-translate-y-1 hover:shadow-card-hover"
     >
-      {/* Header colorato (nessuna foto nel dataset) */}
-      <div className="relative flex h-28 items-center justify-center bg-gradient-to-br from-sam-green to-sam-green-dark">
-        <span className="text-4xl opacity-90">{meta.emoji}</span>
+      {/* Foto se presente, altrimenti header colorato con emoji */}
+      <div className="relative flex h-28 items-center justify-center overflow-hidden bg-gradient-to-br from-sam-green to-sam-green-dark">
+        {space.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={space.image} alt={space.name} className="h-full w-full object-cover" />
+        ) : (
+          <span className="text-4xl opacity-90">{meta.emoji}</span>
+        )}
 
         <span
           className={`absolute left-3 top-3 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-white ${meta.color}`}
         >
           {meta.emoji} {meta.label}
         </span>
+
+        {space.rating != null && (
+          <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-sam-paper/95 px-2.5 py-1 text-xs font-bold text-sam-green">
+            ★ {space.rating}
+            {space.reviewsCount != null && (
+              <span className="font-normal text-sam-muted">({space.reviewsCount})</span>
+            )}
+          </span>
+        )}
 
         <div className="absolute right-3 top-3">
           <FavoriteButton spaceId={space.id} size="sm" />

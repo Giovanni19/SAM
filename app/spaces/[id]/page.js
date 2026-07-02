@@ -3,6 +3,10 @@ import { notFound } from "next/navigation";
 import { getSpaceById, getSpaces } from "@/lib/notion";
 import { typeMeta, getAmenities } from "@/lib/utils";
 import FavoriteButton from "@/components/FavoriteButton";
+import PopularTimesChart from "@/components/PopularTimesChart";
+
+const DAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+const DAY_LABEL = { mon: "Lun", tue: "Mar", wed: "Mer", thu: "Gio", fri: "Ven", sat: "Sab", sun: "Dom" };
 
 const TONE = {
   good: { dot: "bg-sam-green", text: "text-sam-green" },
@@ -38,12 +42,26 @@ export default async function SpaceDetailPage({ params }) {
         ← Tutti gli spazi
       </Link>
 
+      {/* Foto, se presente */}
+      {space.image && (
+        <div className="mt-4 h-56 overflow-hidden rounded-2xl sm:h-72">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={space.image} alt={space.name} className="h-full w-full object-cover" />
+        </div>
+      )}
+
       {/* Hero */}
       <div className="mt-4 flex flex-col gap-4 rounded-2xl bg-gradient-to-br from-sam-green to-sam-green-dark p-6 text-sam-paper sm:flex-row sm:items-center sm:justify-between">
         <div>
           <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white ${meta.color}`}>
             {meta.emoji} {meta.label}
           </span>
+          {space.rating != null && (
+            <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-sam-paper/15 px-3 py-1 text-xs font-semibold text-sam-paper">
+              ★ {space.rating}
+              {space.reviewsCount != null && <span className="opacity-70">({space.reviewsCount})</span>}
+            </span>
+          )}
           <h1 className="mt-3 font-display text-3xl font-bold text-sam-paper">
             {space.name}
           </h1>
@@ -88,6 +106,15 @@ export default async function SpaceDetailPage({ params }) {
               );
             })}
           </ul>
+
+          {space.popularTimes && (
+            <div className="mt-8">
+              <h2 className="font-display text-xl font-bold text-sam-green">Affollamento</h2>
+              <div className="mt-3">
+                <PopularTimesChart popularTimes={space.popularTimes} />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Sidebar */}
@@ -109,6 +136,29 @@ export default async function SpaceDetailPage({ params }) {
                 <dt className="font-semibold text-sam-green">Indirizzo</dt>
                 <dd className="text-sam-brown/90">{space.address}</dd>
               </div>
+              {space.phone && (
+                <div>
+                  <dt className="font-semibold text-sam-green">Telefono</dt>
+                  <dd>
+                    <a href={`tel:${space.phone}`} className="text-sam-brown/90 hover:underline">
+                      {space.phone}
+                    </a>
+                  </dd>
+                </div>
+              )}
+              {space.hours && (
+                <div>
+                  <dt className="font-semibold text-sam-green">Orari</dt>
+                  <dd className="mt-1 space-y-0.5 text-sam-brown/90">
+                    {DAY_ORDER.filter((d) => space.hours[d]).map((d) => (
+                      <div key={d} className="flex justify-between gap-2">
+                        <span className="text-sam-muted">{DAY_LABEL[d]}</span>
+                        <span>{space.hours[d]}</span>
+                      </div>
+                    ))}
+                  </dd>
+                </div>
+              )}
             </dl>
 
             <div className="mt-5 flex flex-col gap-2">
