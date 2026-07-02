@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSpaceById, getSpaces } from "@/lib/notion";
-import { typeMeta, formatScore, scoreLabel, getAmenities } from "@/lib/utils";
+import { typeMeta, getAmenities } from "@/lib/utils";
 import FavoriteButton from "@/components/FavoriteButton";
 
 const TONE = {
@@ -25,7 +25,6 @@ export default async function SpaceDetailPage({ params }) {
   if (!space) notFound();
 
   const meta = typeMeta(space.type);
-  const score = formatScore(space.studyScore);
   const amenities = getAmenities(space);
   const mapsUrl =
     space.googleMaps ||
@@ -56,15 +55,6 @@ export default async function SpaceDetailPage({ params }) {
         </div>
 
         <div className="flex items-center gap-4">
-          {score != null && (
-            <div className="text-center">
-              <div className="font-display text-3xl font-bold text-sam-yellow">
-                {score}
-                <span className="text-lg text-sam-paper/60">/100</span>
-              </div>
-              <div className="text-xs text-sam-paper/70">{scoreLabel(space.studyScore)}</div>
-            </div>
-          )}
           <FavoriteButton spaceId={space.id} />
         </div>
       </div>

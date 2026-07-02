@@ -6,7 +6,7 @@ import SpaceList from "@/components/SpaceList";
 export default async function HomePage() {
   const spaces = await getSpaces();
   const zones = getZones(spaces);
-  const featured = spaces.slice(0, 6); // già ordinati per Study Score
+  const featured = spaces.slice(0, 6);
 
   return (
     <div>
@@ -28,6 +28,7 @@ export default async function HomePage() {
               Esplora gli spazi
             </Link>
             <Link href="/spaces?view=map" className="btn-outline border-sam-paper/40 text-sam-paper hover:bg-sam-paper/10">
+            <Link href="/mappa" className="btn-outline border-sam-paper/40 text-sam-paper hover:bg-sam-paper/10">
               Vedi sulla mappa
             </Link>
           </div>
@@ -39,7 +40,7 @@ export default async function HomePage() {
         <div className="flex items-end justify-between">
           <div>
             <h2 className="font-display text-2xl font-bold text-sam-green">
-              I migliori per studiare
+              Spazi in evidenza
             </h2>
             <p className="mt-1 text-sm text-sam-muted">
               {spaces.length} spazi in {zones.length} zone di Milano

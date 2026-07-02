@@ -16,7 +16,7 @@ export default function Header() {
           <Link href="/spaces" className="rounded-full px-3 py-2 text-sm font-semibold text-sam-brown transition hover:bg-sam-cream">
             Spazi
           </Link>
-          <Link href="/spaces?view=map" className="rounded-full px-3 py-2 text-sm font-semibold text-sam-brown transition hover:bg-sam-cream">
+          <Link href="/mappa" className="rounded-full px-3 py-2 text-sm font-semibold text-sam-brown transition hover:bg-sam-cream">
             Mappa
           </Link>
           <Link href="/favorites" className="btn-primary ml-1">

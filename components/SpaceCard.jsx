@@ -1,6 +1,6 @@
 import Link from "next/link";
 import FavoriteButton from "./FavoriteButton";
-import { typeMeta, formatScore, getAmenities } from "@/lib/utils";
+import { typeMeta, getAmenities } from "@/lib/utils";
 
 const TONE_DOT = {
   good: "text-sam-green",
@@ -10,7 +10,6 @@ const TONE_DOT = {
 
 export default function SpaceCard({ space }) {
   const meta = typeMeta(space.type);
-  const score = formatScore(space.studyScore);
   const amenities = getAmenities(space).slice(0, 4);
 
   return (
@@ -27,13 +26,6 @@ export default function SpaceCard({ space }) {
         >
           {meta.emoji} {meta.label}
         </span>
-
-        {score != null && (
-          <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-sam-paper/95 px-2.5 py-1 text-xs font-bold text-sam-green">
-            ★ {score}
-            <span className="font-normal text-sam-muted">/100</span>
-          </span>
-        )}
 
         <div className="absolute right-3 top-3">
           <FavoriteButton spaceId={space.id} size="sm" />
