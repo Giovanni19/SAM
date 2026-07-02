@@ -27,7 +27,6 @@ export default async function HomePage() {
             <Link href="/spaces" className="btn-primary bg-sam-yellow text-sam-brown hover:bg-sam-orange">
               Esplora gli spazi
             </Link>
-            <Link href="/spaces?view=map" className="btn-outline border-sam-paper/40 text-sam-paper hover:bg-sam-paper/10">
             <Link href="/mappa" className="btn-outline border-sam-paper/40 text-sam-paper hover:bg-sam-paper/10">
               Vedi sulla mappa
             </Link>
