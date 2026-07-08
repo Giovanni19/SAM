@@ -3,9 +3,10 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import Link from "next/link";
 
-// Banner globale "Accedi o registrati…": qualunque componente può mostrarlo
-// chiamando useAuthPrompt().show("messaggio"). Compare in basso, con i link
-// ad accesso e registrazione, e si chiude da solo dopo qualche secondo.
+// Modal globale "Accedi o registrati…": qualunque componente può mostrarlo
+// chiamando useAuthPrompt().show("messaggio"). Compare al centro, sopra un
+// overlay scuro che oscura il resto della pagina; l'utente può chiuderlo con
+// la X, ma finché non accede filtri e preferiti restano bloccati.
 const AuthPromptContext = createContext({ show: () => {} });
 
 export function useAuthPrompt() {
@@ -18,51 +19,62 @@ export default function AuthPromptProvider({ children }) {
   const show = useCallback((msg) => setMessage(msg), []);
   const close = useCallback(() => setMessage(null), []);
 
+  // Chiudi con Esc, come ci si aspetta da un modal.
   useEffect(() => {
     if (!message) return;
-    const id = setTimeout(() => setMessage(null), 6000);
-    return () => clearTimeout(id);
-  }, [message]);
+    const onKey = (e) => e.key === "Escape" && close();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [message, close]);
 
   return (
     <AuthPromptContext.Provider value={{ show }}>
       {children}
 
       {message && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[1200] flex justify-center px-4">
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4">
+          {/* Overlay: oscura il resto della pagina, chiude al click fuori */}
           <div
-            role="alert"
-            className="pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-2xl border border-sam-cream bg-white p-4 shadow-card"
+            className="absolute inset-0 bg-black/60"
+            onClick={close}
+            aria-hidden
+          />
+
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            className="relative flex w-full max-w-lg flex-col items-center gap-4 rounded-2xl border border-sam-cream bg-white p-8 text-center shadow-card-hover"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/sam-icon.svg" alt="" aria-hidden className="h-12 w-12 shrink-0" />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-sam-green">{message}</p>
-              <div className="mt-2 flex gap-2">
-                <Link
-                  href="/login"
-                  onClick={close}
-                  className="rounded-full bg-sam-green px-3 py-1.5 text-xs font-semibold text-sam-paper transition hover:bg-sam-green-dark"
-                >
-                  Accedi
-                </Link>
-                <Link
-                  href="/signup"
-                  onClick={close}
-                  className="rounded-full border border-sam-green/30 px-3 py-1.5 text-xs font-semibold text-sam-green transition hover:bg-sam-green/5"
-                >
-                  Registrati
-                </Link>
-              </div>
-            </div>
             <button
               type="button"
               onClick={close}
               aria-label="Chiudi"
-              className="shrink-0 self-start rounded-full px-2 text-sam-muted hover:bg-sam-cream"
+              className="absolute right-3 top-3 rounded-full px-2 py-1 text-sam-muted hover:bg-sam-cream"
             >
               ✕
             </button>
+
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/sam-icon.svg" alt="" aria-hidden className="h-16 w-16" />
+
+            <p className="text-lg font-semibold text-sam-green">{message}</p>
+
+            <div className="mt-1 flex gap-3">
+              <Link
+                href="/login"
+                onClick={close}
+                className="btn-primary"
+              >
+                Accedi
+              </Link>
+              <Link
+                href="/signup"
+                onClick={close}
+                className="btn-outline"
+              >
+                Registrati
+              </Link>
+            </div>
           </div>
         </div>
       )}

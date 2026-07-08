@@ -91,6 +91,11 @@ export default function LoginPage() {
           >
             {pending ? "Attendere…" : "Accedi"}
           </button>
+          <div className="text-right">
+            <Link href="/forgot-password" className="text-xs font-semibold text-sam-green hover:underline">
+              Ho dimenticato la mia password
+            </Link>
+          </div>
         </form>
 
         {/* Divisore */}

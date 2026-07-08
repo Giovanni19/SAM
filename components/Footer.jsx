@@ -42,7 +42,7 @@ export default function Footer() {
         <div>
           <h4 className="font-display text-sm font-semibold text-sam-paper">Contatti</h4>
           <ul className="mt-3 space-y-2 text-sm text-sam-paper/70">
-            <li>info@sam-milano.it</li>
+            <li><a href="mailto:info@studyareasmilan.it" className="hover:text-sam-paper">info@studyareasmilan.it</a></li>
             <li>Milano, Italia</li>
           </ul>
         </div>
