@@ -22,6 +22,10 @@ export default function SearchBar({
   onSearch,
   onReset,
   canReset = false,
+  query = "",
+  onQueryChange,
+  openNow = false,
+  onOpenNowChange,
 }) {
   return (
     <form
@@ -31,6 +35,18 @@ export default function SearchBar({
       }}
       className="rounded-2xl bg-white p-4 shadow-card"
     >
+      {/* Ricerca per nome (fuzzy, tollera i refusi) — filtra mentre scrivi */}
+      <label className="mb-3 block">
+        <span className="mb-1 block text-xs font-semibold text-sam-green">Cerca un posto</span>
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => onQueryChange?.(e.target.value)}
+          placeholder="Nome del posto (es. Biblioteca Sormani)…"
+          className={selectClass}
+        />
+      </label>
+
       <div className="flex flex-col gap-3 sm:flex-row">
         <label className="flex-1">
           <span className="mb-1 block text-xs font-semibold text-sam-green">Zona</span>
@@ -72,7 +88,7 @@ export default function SearchBar({
         ))}
       </div>
 
-      <div className="mt-3 flex gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         <button type="submit" className="btn-primary">
           🔍 Cerca
         </button>
@@ -81,6 +97,15 @@ export default function SearchBar({
             Reset
           </button>
         )}
+        <label className="ml-auto inline-flex cursor-pointer items-center gap-2 text-sm font-semibold text-sam-brown">
+          <input
+            type="checkbox"
+            checked={openNow}
+            onChange={(e) => onOpenNowChange?.(e.target.checked)}
+            className="h-4 w-4 accent-sam-green"
+          />
+          Aperti adesso
+        </label>
       </div>
     </form>
   );

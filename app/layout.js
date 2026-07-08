@@ -2,6 +2,7 @@ import "@/styles/globals.css";
 import { Poppins, Nunito } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import FavoritesProvider from "@/components/FavoritesProvider";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -27,9 +28,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="it" className={`${poppins.variable} ${nunito.variable}`}>
       <body className="flex min-h-screen flex-col">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <FavoritesProvider>
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </FavoritesProvider>
       </body>
     </html>
   );

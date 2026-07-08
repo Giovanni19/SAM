@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AuthNav from "./AuthNav";
 
 export default function Header() {
   return (
@@ -22,6 +23,7 @@ export default function Header() {
           <Link href="/favorites" className="btn-primary ml-1">
             ♥ Preferiti
           </Link>
+          <AuthNav />
         </nav>
       </div>
     </header>

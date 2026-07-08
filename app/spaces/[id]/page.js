@@ -4,6 +4,7 @@ import { getSpaceById, getSpaces } from "@/lib/notion";
 import { typeMeta, getAmenities } from "@/lib/utils";
 import FavoriteButton from "@/components/FavoriteButton";
 import PopularTimesChart from "@/components/PopularTimesChart";
+import OpenNowBadge from "@/components/OpenNowBadge";
 
 const DAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const DAY_LABEL = { mon: "Lun", tue: "Mar", wed: "Mer", thu: "Gio", fri: "Ven", sat: "Sab", sun: "Dom" };
@@ -57,9 +58,13 @@ export default async function SpaceDetailPage({ params }) {
             {meta.emoji} {meta.label}
           </span>
           {space.rating != null && (
-            <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-sam-paper/15 px-3 py-1 text-xs font-semibold text-sam-paper">
+            <span
+              className="ml-2 inline-flex items-center gap-1 rounded-full bg-sam-paper/15 px-3 py-1 text-xs font-semibold text-sam-paper"
+              title="Valutazione e recensioni da Google Maps"
+            >
               ★ {space.rating}
               {space.reviewsCount != null && <span className="opacity-70">({space.reviewsCount})</span>}
+              <span className="opacity-70">· Google</span>
             </span>
           )}
           <h1 className="mt-3 font-display text-3xl font-bold text-sam-paper">
@@ -107,14 +112,18 @@ export default async function SpaceDetailPage({ params }) {
             })}
           </ul>
 
-          {space.popularTimes && (
-            <div className="mt-8">
-              <h2 className="font-display text-xl font-bold text-sam-green">Affollamento</h2>
-              <div className="mt-3">
+          <div className="mt-8">
+            <h2 className="font-display text-xl font-bold text-sam-green">Affollamento</h2>
+            <div className="mt-3">
+              {space.popularTimes ? (
                 <PopularTimesChart popularTimes={space.popularTimes} />
-              </div>
+              ) : (
+                <div className="rounded-2xl border border-sam-cream bg-white p-5 text-sm text-sam-muted">
+                  Dati affluenza non disponibili.
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
         {/* Sidebar */}
@@ -148,7 +157,9 @@ export default async function SpaceDetailPage({ params }) {
               )}
               {space.hours && (
                 <div>
-                  <dt className="font-semibold text-sam-green">Orari</dt>
+                  <dt className="flex items-center gap-2 font-semibold text-sam-green">
+                    Orari <OpenNowBadge hours={space.hours} size="sm" />
+                  </dt>
                   <dd className="mt-1 space-y-0.5 text-sam-brown/90">
                     {DAY_ORDER.filter((d) => space.hours[d]).map((d) => (
                       <div key={d} className="flex justify-between gap-2">

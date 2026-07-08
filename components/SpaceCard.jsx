@@ -1,5 +1,6 @@
 import Link from "next/link";
 import FavoriteButton from "./FavoriteButton";
+import OpenNowBadge from "./OpenNowBadge";
 import { typeMeta, getAmenities } from "@/lib/utils";
 
 const TONE_DOT = {
@@ -33,7 +34,10 @@ export default function SpaceCard({ space }) {
         </span>
 
         {space.rating != null && (
-          <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-sam-paper/95 px-2.5 py-1 text-xs font-bold text-sam-green">
+          <span
+            className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-sam-paper/95 px-2.5 py-1 text-xs font-bold text-sam-green"
+            title="Valutazione Google Maps"
+          >
             ★ {space.rating}
             {space.reviewsCount != null && (
               <span className="font-normal text-sam-muted">({space.reviewsCount})</span>
@@ -57,6 +61,8 @@ export default function SpaceCard({ space }) {
           {space.zone && space.address && " · "}
           <span className="text-sam-muted">{space.address}</span>
         </p>
+
+        {space.hours && <OpenNowBadge hours={space.hours} size="sm" />}
 
         {/* Amenità sintetiche */}
         {amenities.length > 0 && (
