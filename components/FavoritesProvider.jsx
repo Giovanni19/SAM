@@ -30,6 +30,7 @@ export default function FavoritesProvider({ children }) {
   const [favorites, setFavorites] = useState([]);
   const [ready, setReady] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const userIdRef = useRef(null);
   const supabaseRef = useRef(null);
 
@@ -40,6 +41,7 @@ export default function FavoritesProvider({ children }) {
 
   const loadForUser = useCallback(async (uid) => {
     userIdRef.current = uid;
+    setIsLoggedIn(Boolean(uid));
     if (!uid) {
       setFavorites(readLocal());
       setReady(true);
@@ -114,7 +116,7 @@ export default function FavoritesProvider({ children }) {
   const isFavorite = useCallback((id) => favorites.includes(id), [favorites]);
 
   return (
-    <FavoritesContext.Provider value={{ favorites, isFavorite, toggle, ready, syncing }}>
+    <FavoritesContext.Provider value={{ favorites, isFavorite, toggle, ready, syncing, isLoggedIn }}>
       {children}
     </FavoritesContext.Provider>
   );

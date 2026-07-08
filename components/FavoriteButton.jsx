@@ -1,10 +1,12 @@
 "use client";
 
 import { useFavorites } from "@/lib/useFavorites";
+import { useAuthPrompt } from "@/components/AuthPrompt";
 import { cn } from "@/lib/utils";
 
 export default function FavoriteButton({ spaceId, className, size = "md" }) {
-  const { isFavorite, toggle, ready } = useFavorites();
+  const { isFavorite, toggle, ready, isLoggedIn } = useFavorites();
+  const { show } = useAuthPrompt();
   const active = ready && isFavorite(spaceId);
 
   const sizes = {
@@ -20,6 +22,12 @@ export default function FavoriteButton({ spaceId, className, size = "md" }) {
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
+        // I preferiti si salvano solo con un account: se non sei loggato,
+        // mostra il banner di invito ad accedere invece di salvare.
+        if (!isLoggedIn) {
+          show("Accedi o registrati per salvarlo nei tuoi preferiti");
+          return;
+        }
         toggle(spaceId);
       }}
       className={cn(

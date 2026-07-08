@@ -6,8 +6,11 @@ export default function Footer() {
       <div className="container-sam grid gap-8 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div className="sm:col-span-2 lg:col-span-1">
           <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-sam-paper font-display text-lg font-bold text-sam-green">
-              S
+            {/* Sfondo bianco: senza, le cuffie (verde scuro) si confondono
+                con lo sfondo verde del footer e l'icona diventa illeggibile. */}
+            <span className="flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-full bg-sam-paper">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/brand/sam-icon.svg" alt="SAM" className="h-14 w-14" />
             </span>
             <span className="font-display text-xl font-bold">SAM</span>
           </div>
@@ -28,10 +31,11 @@ export default function Footer() {
         <div>
           <h4 className="font-display text-sm font-semibold text-sam-paper">Tipi</h4>
           <ul className="mt-3 space-y-2 text-sm text-sam-paper/70">
-            <li>Caffetterie</li>
-            <li>Biblioteche</li>
-            <li>Coworking</li>
-            <li>Librerie</li>
+            {/* Il valore di ?type= deve combaciare con lo `type` degli spazi. */}
+            <li><Link href="/spaces?type=Caffetteria" className="hover:text-sam-paper">Caffetterie</Link></li>
+            <li><Link href="/spaces?type=Biblioteca" className="hover:text-sam-paper">Biblioteche</Link></li>
+            <li><Link href="/spaces?type=Coworking" className="hover:text-sam-paper">Coworking</Link></li>
+            <li><Link href="/spaces?type=Libreria" className="hover:text-sam-paper">Librerie</Link></li>
           </ul>
         </div>
 

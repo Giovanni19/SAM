@@ -3,9 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import SearchBar from "./SearchBar";
 import SpaceList from "./SpaceList";
+import { useFavorites } from "@/lib/useFavorites";
+import { useAuthPrompt } from "@/components/AuthPrompt";
 import { getZones, getTypes, AMENITY_FILTERS, fuzzyFilter, isOpenNow } from "@/lib/utils";
 
 const EMPTY_AMENITY_FILTERS = Object.fromEntries(AMENITY_FILTERS.map((f) => [f.key, ""]));
+
+// True se sono stati scelti dei filtri (Zona / Tipo / amenità) da applicare.
+function hasChosenFilters(zone, type, filters) {
+  return Boolean(zone || type || AMENITY_FILTERS.some(({ key }) => filters[key]));
+}
 
 /**
  * Ricerca + lista con:
@@ -13,6 +20,8 @@ const EMPTY_AMENITY_FILTERS = Object.fromEntries(AMENITY_FILTERS.map((f) => [f.k
  *  - Zona / Tipo / amenità: si applicano al click su "Cerca"
  */
 export default function SpacesExplorer({ spaces = [], initialType = "" }) {
+  const { isLoggedIn } = useFavorites();
+  const { show } = useAuthPrompt();
   const zones = useMemo(() => getZones(spaces), [spaces]);
   const types = useMemo(() => getTypes(spaces), [spaces]);
 
@@ -63,7 +72,14 @@ export default function SpacesExplorer({ spaces = [], initialType = "" }) {
         onQueryChange={setQuery}
         openNow={openNow}
         onOpenNowChange={setOpenNow}
-        onSearch={() => setApplied({ zone: pendingZone, type: pendingType, ...pendingFilters })}
+        onSearch={() => {
+          // I filtri sono riservati agli utenti registrati.
+          if (!isLoggedIn && hasChosenFilters(pendingZone, pendingType, pendingFilters)) {
+            show("Accedi o registrati per usare i filtri");
+            return;
+          }
+          setApplied({ zone: pendingZone, type: pendingType, ...pendingFilters });
+        }}
         onReset={() => {
           setPendingZone("");
           setPendingType("");
