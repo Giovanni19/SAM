@@ -26,6 +26,11 @@ export async function signup(_prev, formData) {
   const firstName = String(formData.get("first_name") || "").trim();
   const lastName = String(formData.get("last_name") || "").trim();
   const fullName = [firstName, lastName].filter(Boolean).join(" ");
+  // Campi facoltativi di profilazione (per le analytics B2B).
+  const occupation = String(formData.get("occupation") || "").trim();
+  // L'università ha senso solo per gli studenti.
+  const university = occupation === "studente" ? String(formData.get("university") || "").trim() : "";
+  const ageRange = String(formData.get("age_range") || "").trim();
   if (!email || !password) return { error: "Inserisci email e password." };
   if (password.length < 6) return { error: "La password deve avere almeno 6 caratteri." };
 
@@ -35,7 +40,14 @@ export async function signup(_prev, formData) {
     email,
     password,
     options: {
-      data: { full_name: fullName, first_name: firstName, last_name: lastName },
+      data: {
+        full_name: fullName,
+        first_name: firstName,
+        last_name: lastName,
+        occupation,
+        university,
+        age_range: ageRange,
+      },
       emailRedirectTo: `${origin}/auth/confirm?next=/account`,
     },
   });
