@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AuthNav from "./AuthNav";
+import MobileMenu from "./MobileMenu";
 
 export default function Header() {
   return (
@@ -12,7 +13,8 @@ export default function Header() {
           <span className="hidden text-sm text-sam-muted sm:inline">Study Areas Milano</span>
         </Link>
 
-        <nav className="flex items-center gap-1 sm:gap-2">
+        {/* Navigazione desktop (da md in su) */}
+        <nav className="hidden items-center gap-1 sm:gap-2 md:flex">
           <Link href="/spaces" className="rounded-full px-3 py-2 text-sm font-semibold text-sam-brown transition hover:bg-sam-cream">
             Spazi
           </Link>
@@ -24,6 +26,11 @@ export default function Header() {
           </Link>
           <AuthNav />
         </nav>
+
+        {/* Menu mobile (sotto md) */}
+        <div className="md:hidden">
+          <MobileMenu />
+        </div>
       </div>
     </header>
   );
