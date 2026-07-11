@@ -21,6 +21,7 @@ const nunito = Nunito({
 });
 
 export const metadata = {
+  metadataBase: new URL("https://www.studyareasmilan.it"),
   title: "SAM — Study Areas Milan",
   description:
     "Trova i migliori spazi studio, caffetterie, biblioteche e coworking a Milano dove studiare e lavorare.",
