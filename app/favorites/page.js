@@ -6,7 +6,8 @@ export const metadata = {
 };
 
 export default async function FavoritesPage() {
-  const spaces = await getSpaces();
+  // Solo posti da studio (i coworking preferiti si vedono in SAM for Work).
+  const spaces = (await getSpaces()).filter((s) => s.type !== "Coworking");
 
   return (
     <div className="container-sam py-10">

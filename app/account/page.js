@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import LogoutButton from "@/components/LogoutButton";
 import ProfileForm from "@/components/ProfileForm";
+import AccountPrivacy from "@/components/AccountPrivacy";
 
 export const metadata = { title: "Il tuo account — SAM" };
 
@@ -20,6 +21,14 @@ export default async function AccountPage() {
   const m = user.user_metadata || {};
   const name = m.full_name || user.email?.split("@")[0];
 
+  // Stato del consenso alle analytics: fonte autorevole = tabella profiles.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("consent_analytics")
+    .eq("id", user.id)
+    .maybeSingle();
+  const consentAnalytics = Boolean(profile?.consent_analytics);
+
   return (
     <div className="container-sam py-12">
       <h1 className="font-display text-3xl font-bold text-sam-green">Ciao, {name}</h1>
@@ -28,6 +37,7 @@ export default async function AccountPage() {
       <ProfileForm
         userId={user.id}
         email={user.email}
+        consentAnalytics={consentAnalytics}
         initial={{
           first_name: m.first_name || "",
           last_name: m.last_name || "",
@@ -43,6 +53,9 @@ export default async function AccountPage() {
         </Link>
         <LogoutButton />
       </div>
+
+      {/* Privacy & controllo dati: consenso, export, cancellazione */}
+      <AccountPrivacy userId={user.id} consentAnalytics={consentAnalytics} />
     </div>
   );
 }

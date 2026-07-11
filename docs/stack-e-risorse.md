@@ -7,7 +7,7 @@
 
 ## 1. Panoramica
 
-SAM (Study Areas Milano) è un sito web che aiuta a trovare posti dove
+SAM (Study Areas Milan) è un sito web che aiuta a trovare posti dove
 studiare/lavorare a Milano (caffetterie, biblioteche, coworking, librerie).
 Gli utenti possono cercare, filtrare (previa registrazione) e salvare i
 preferiti. Il sito è **online** su `https://studyareasmilan.it`.

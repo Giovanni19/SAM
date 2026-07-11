@@ -19,7 +19,7 @@ function hasChosenFilters(zone, type, filters) {
  *  - ricerca per nome (fuzzy, tollera i refusi) e "Aperti adesso": filtrano dal vivo
  *  - Zona / Tipo / amenità: si applicano al click su "Cerca"
  */
-export default function SpacesExplorer({ spaces = [], initialType = "" }) {
+export default function SpacesExplorer({ spaces = [], initialType = "", hideType = false, basePath = "/spaces" }) {
   const { isLoggedIn } = useFavorites();
   const { show } = useAuthPrompt();
   const zones = useMemo(() => getZones(spaces), [spaces]);
@@ -62,6 +62,7 @@ export default function SpacesExplorer({ spaces = [], initialType = "" }) {
       <SearchBar
         zones={zones}
         types={types}
+        hideType={hideType}
         zone={pendingZone}
         type={pendingType}
         onZoneChange={setPendingZone}
@@ -101,7 +102,7 @@ export default function SpacesExplorer({ spaces = [], initialType = "" }) {
       </div>
 
       <div className="mt-4">
-        <SpaceList spaces={results} />
+        <SpaceList spaces={results} basePath={basePath} />
       </div>
     </div>
   );

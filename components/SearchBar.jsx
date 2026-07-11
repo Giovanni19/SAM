@@ -15,6 +15,7 @@ export default function SearchBar({
   types = [],
   zone,
   type,
+  hideType = false,
   onZoneChange,
   onTypeChange,
   filters = {},
@@ -58,15 +59,17 @@ export default function SearchBar({
           </select>
         </label>
 
-        <label className="flex-1">
-          <span className="mb-1 block text-xs font-semibold text-sam-green">Tipo di spazio</span>
-          <select value={type} onChange={(e) => onTypeChange?.(e.target.value)} className={selectClass}>
-            <option value="">Tutti i tipi</option>
-            {types.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-        </label>
+        {!hideType && (
+          <label className="flex-1">
+            <span className="mb-1 block text-xs font-semibold text-sam-green">Tipo di spazio</span>
+            <select value={type} onChange={(e) => onTypeChange?.(e.target.value)} className={selectClass}>
+              <option value="">Tutti i tipi</option>
+              {types.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
 
       {/* Filtri per amenità: personalizza in base a cosa ti serve davvero */}

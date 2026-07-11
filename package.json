@@ -2,7 +2,7 @@
   "name": "sam-web",
   "version": "0.1.0",
   "private": true,
-  "description": "SAM - Study Areas Milano: piattaforma per trovare spazi studio a Milano",
+  "description": "SAM - Study Areas Milan: piattaforma per trovare spazi studio a Milano",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

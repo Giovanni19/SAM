@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useFavorites } from "@/lib/useFavorites";
 import SpaceList from "./SpaceList";
 
-export default function FavoritesGrid({ spaces = [] }) {
+export default function FavoritesGrid({ spaces = [], basePath = "/spaces" }) {
   const { favorites, ready } = useFavorites();
 
   if (!ready) {
@@ -19,10 +19,10 @@ export default function FavoritesGrid({ spaces = [] }) {
         <p className="text-4xl">♡</p>
         <p className="mt-3 font-display font-semibold text-sam-green">Nessun preferito ancora</p>
         <p className="mt-1 text-sm text-sam-muted">Tocca il cuore su uno spazio per salvarlo qui.</p>
-        <Link href="/spaces" className="btn-primary mt-6">Esplora gli spazi</Link>
+        <Link href={basePath} className="btn-primary mt-6">Esplora gli spazi</Link>
       </div>
     );
   }
 
-  return <SpaceList spaces={saved} />;
+  return <SpaceList spaces={saved} basePath={basePath} />;
 }

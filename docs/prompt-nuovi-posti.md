@@ -1,5 +1,5 @@
 Devo aggiungere nuovi posti a un database Notion che alimenta un sito web
-(SAM — Study Areas Milano, spazi dove studiare/lavorare a Milano: caffetterie,
+(SAM — Study Areas Milan, spazi dove studiare/lavorare a Milano: caffetterie,
 biblioteche, coworking, librerie). Genera una TABELLA con i posti che ti
 indicherò (o che proponi tu, se te lo chiedo), con esattamente queste colonne,
 nello stesso ordine, pronta da incollare in Notion:

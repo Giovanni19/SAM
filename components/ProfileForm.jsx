@@ -10,7 +10,7 @@ const inputClass =
 // Form dei dati account: mostra i valori attuali e permette di modificarli.
 // Salva sia nei metadata utente (usati dall'app) sia nella tabella profiles
 // (usata per le analytics), così restano allineati.
-export default function ProfileForm({ userId, email, initial }) {
+export default function ProfileForm({ userId, email, initial, consentAnalytics = false }) {
   const [firstName, setFirstName] = useState(initial.first_name || "");
   const [lastName, setLastName] = useState(initial.last_name || "");
   const [occupation, setOccupation] = useState(initial.occupation || "");
@@ -28,15 +28,19 @@ export default function ProfileForm({ userId, email, initial }) {
     setPending(true);
 
     const fullName = [firstName, lastName].filter(Boolean).join(" ");
-    // L'università ha senso solo per gli studenti.
-    const uni = occupation === "studente" ? university : "";
+    // I dati di profilazione si salvano SOLO se è attivo il relativo consenso;
+    // altrimenti restano vuoti (rispetto del consenso). L'università ha senso
+    // solo per gli studenti.
+    const occ = consentAnalytics ? occupation : "";
+    const uni = consentAnalytics && occupation === "studente" ? university : "";
+    const age = consentAnalytics ? ageRange : "";
     const data = {
       full_name: fullName,
       first_name: firstName,
       last_name: lastName,
-      occupation,
+      occupation: occ,
       university: uni,
-      age_range: ageRange,
+      age_range: age,
     };
 
     const supabase = createClient();
@@ -50,7 +54,7 @@ export default function ProfileForm({ userId, email, initial }) {
     // bloccante: i metadata sono comunque aggiornati.
     await supabase
       .from("profiles")
-      .update({ full_name: fullName, first_name: firstName, last_name: lastName, occupation, university: uni || null, age_range: ageRange || null })
+      .update({ full_name: fullName, first_name: firstName, last_name: lastName, occupation: occ || null, university: uni || null, age_range: age || null })
       .eq("id", userId);
 
     setMessage("Dati salvati.");
@@ -76,52 +80,63 @@ export default function ProfileForm({ userId, email, initial }) {
         </label>
       </div>
 
-      {/* Occupazione */}
-      <div>
-        <span className="mb-1 block text-xs font-semibold text-sam-green">Cosa fai?</span>
-        <div className="flex flex-wrap gap-2">
-          {OCCUPATIONS.map((o) => {
-            const active = occupation === o.value;
-            return (
-              <button
-                key={o.value}
-                type="button"
-                onClick={() => setOccupation(active ? "" : o.value)}
-                aria-pressed={active}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  active ? "bg-sam-green text-sam-paper" : "bg-sam-cream text-sam-brown hover:bg-sam-cream/70"
-                }`}
-              >
-                {o.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      {/* Dati di profilazione: modificabili solo se il consenso è attivo.
+          La gestione del consenso è nella sezione "Privacy e dati" più sotto. */}
+      {consentAnalytics ? (
+        <>
+          {/* Occupazione */}
+          <div>
+            <span className="mb-1 block text-xs font-semibold text-sam-green">Cosa fai?</span>
+            <div className="flex flex-wrap gap-2">
+              {OCCUPATIONS.map((o) => {
+                const active = occupation === o.value;
+                return (
+                  <button
+                    key={o.value}
+                    type="button"
+                    onClick={() => setOccupation(active ? "" : o.value)}
+                    aria-pressed={active}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      active ? "bg-sam-green text-sam-paper" : "bg-sam-cream text-sam-brown hover:bg-sam-cream/70"
+                    }`}
+                  >
+                    {o.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-      {/* Università: solo se studente */}
-      {occupation === "studente" && (
-        <label className="block">
-          <span className="mb-1 block text-xs font-semibold text-sam-green">Università</span>
-          <select value={university} onChange={(e) => setUniversity(e.target.value)} className={inputClass}>
-            <option value="">Seleziona…</option>
-            {MILAN_UNIVERSITIES.map((u) => (
-              <option key={u} value={u}>{u}</option>
-            ))}
-          </select>
-        </label>
+          {/* Università: solo se studente */}
+          {occupation === "studente" && (
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-sam-green">Università</span>
+              <select value={university} onChange={(e) => setUniversity(e.target.value)} className={inputClass}>
+                <option value="">Seleziona…</option>
+                {MILAN_UNIVERSITIES.map((u) => (
+                  <option key={u} value={u}>{u}</option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          {/* Fascia d'età */}
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-sam-green">Età</span>
+            <select value={ageRange} onChange={(e) => setAgeRange(e.target.value)} className={inputClass}>
+              <option value="">Preferisco non dirlo</option>
+              {AGE_RANGES.map((a) => (
+                <option key={a} value={a}>{a} anni</option>
+              ))}
+            </select>
+          </label>
+        </>
+      ) : (
+        <p className="rounded-xl bg-sam-cream/50 px-3 py-2 text-[11px] text-sam-muted">
+          I campi occupazione, università ed età sono disattivati: puoi abilitarli dando il consenso
+          alle analytics nella sezione “Privacy e dati” qui sotto.
+        </p>
       )}
-
-      {/* Fascia d'età */}
-      <label className="block">
-        <span className="mb-1 block text-xs font-semibold text-sam-green">Età</span>
-        <select value={ageRange} onChange={(e) => setAgeRange(e.target.value)} className={inputClass}>
-          <option value="">Preferisco non dirlo</option>
-          {AGE_RANGES.map((a) => (
-            <option key={a} value={a}>{a} anni</option>
-          ))}
-        </select>
-      </label>
 
       {error && <p className="text-sm text-sam-coral">{error}</p>}
       {message && <p className="text-sm text-sam-green">{message}</p>}

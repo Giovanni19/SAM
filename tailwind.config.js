@@ -19,6 +19,11 @@ module.exports = {
           coral: "#C75D4A",
           yellow: "#F2B441",     // Accento vivace
           muted: "#9aa39d",
+          // Sub-brand "SAM for Work" (coworking): bordeaux professionale.
+          // NB: il rosso-allarme resta `coral`, riservato agli errori.
+          work: "#7A2E3A",
+          "work-dark": "#5C2230",
+          "work-tint": "#F3E4E7",
         },
       },
       fontFamily: {

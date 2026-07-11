@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -10,6 +11,10 @@ export default function MobileMenu() {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState(null);
   const ref = useRef(null);
+
+  const pathname = usePathname() || "/";
+  const isWork = pathname === "/work" || pathname.startsWith("/work/");
+  const prefix = isWork ? "/work" : "";
 
   useEffect(() => {
     const supabase = createClient();
@@ -42,7 +47,7 @@ export default function MobileMenu() {
     "block rounded-lg px-3 py-2.5 text-sm font-semibold text-sam-brown transition hover:bg-sam-cream";
 
   return (
-    <div className="relative" ref={ref}>
+    <div className={`relative ${isWork ? "theme-work" : ""}`} ref={ref}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -68,13 +73,13 @@ export default function MobileMenu() {
 
       {open && (
         <div className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-xl border border-sam-cream bg-white p-1 shadow-card">
-          <Link href="/spaces" onClick={() => setOpen(false)} className={linkClass}>
+          <Link href={`${prefix}/spaces`} onClick={() => setOpen(false)} className={linkClass}>
             Spazi
           </Link>
-          <Link href="/map" onClick={() => setOpen(false)} className={linkClass}>
+          <Link href={`${prefix}/map`} onClick={() => setOpen(false)} className={linkClass}>
             Mappa
           </Link>
-          <Link href="/favorites" onClick={() => setOpen(false)} className={linkClass}>
+          <Link href={`${prefix}/favorites`} onClick={() => setOpen(false)} className={linkClass}>
             ♥ Preferiti
           </Link>
 

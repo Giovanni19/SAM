@@ -7,7 +7,8 @@ export const metadata = {
 };
 
 export default async function MapPage() {
-  const spaces = await getSpaces();
+  // SAM esclude i coworking (sono in SAM for Work).
+  const spaces = (await getSpaces()).filter((s) => s.type !== "Coworking");
   const withCoords = spaces.filter((s) => s.lat != null && s.lng != null);
 
   return (

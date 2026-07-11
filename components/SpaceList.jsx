@@ -1,6 +1,6 @@
 import SpaceCard from "./SpaceCard";
 
-export default function SpaceList({ spaces = [] }) {
+export default function SpaceList({ spaces = [], basePath = "/spaces" }) {
   if (!spaces.length) {
     return (
       <div className="rounded-2xl border border-dashed border-sam-muted/40 py-16 text-center">
@@ -14,7 +14,7 @@ export default function SpaceList({ spaces = [] }) {
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {spaces.map((space) => (
-        <SpaceCard key={space.id} space={space} />
+        <SpaceCard key={space.id} space={space} basePath={basePath} />
       ))}
     </div>
   );

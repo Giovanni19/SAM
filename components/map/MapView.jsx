@@ -29,7 +29,7 @@ const LeafletMap = dynamic(() => import("./LeafletMap"), {
   ),
 });
 
-export default function MapView({ spaces = [] }) {
+export default function MapView({ spaces = [], hideType = false, basePath = "/spaces" }) {
   const { isLoggedIn } = useFavorites();
   const { show } = useAuthPrompt();
   const zones = useMemo(() => getZones(spaces), [spaces]);
@@ -105,6 +105,7 @@ export default function MapView({ spaces = [] }) {
       <SearchBar
         zones={zones}
         types={types}
+        hideType={hideType}
         zone={pendingZone}
         type={pendingType}
         onZoneChange={setPendingZone}
@@ -154,7 +155,7 @@ export default function MapView({ spaces = [] }) {
         {/* Pannello laterale */}
         <aside className="rounded-2xl border border-sam-cream bg-white p-4 shadow-card">
           {selected ? (
-            <SpacePreview space={selected} onClose={() => setSelectedId(null)} />
+            <SpacePreview space={selected} basePath={basePath} onClose={() => setSelectedId(null)} />
           ) : !userPos ? (
             <div>
               <h2 className="font-display font-bold text-sam-green">Trova i posti vicini</h2>
@@ -201,7 +202,7 @@ export default function MapView({ spaces = [] }) {
 }
 
 /** Anteprima del posto selezionato sulla mappa. */
-function SpacePreview({ space, onClose }) {
+function SpacePreview({ space, onClose, basePath = "/spaces" }) {
   const meta = typeMeta(space.type);
   const amenities = getAmenities(space).slice(0, 4);
 
@@ -254,7 +255,7 @@ function SpacePreview({ space, onClose }) {
         </ul>
       )}
 
-      <Link href={`/spaces/${space.id}`} className="btn-primary mt-4 w-full">
+      <Link href={`${basePath}/${space.id}`} className="btn-primary mt-4 w-full">
         Vedi dettagli
       </Link>
     </div>

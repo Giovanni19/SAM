@@ -9,13 +9,13 @@ const TONE_DOT = {
   bad: "text-sam-coral",
 };
 
-export default function SpaceCard({ space }) {
+export default function SpaceCard({ space, basePath = "/spaces" }) {
   const meta = typeMeta(space.type);
   const amenities = getAmenities(space).slice(0, 4);
 
   return (
     <Link
-      href={`/spaces/${space.id}`}
+      href={`${basePath}/${space.id}`}
       className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-card transition hover:-translate-y-1 hover:shadow-card-hover"
     >
       {/* Foto se presente, altrimenti header colorato con emoji */}

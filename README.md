@@ -1,4 +1,4 @@
-# SAM — Study Areas Milano
+# SAM — Study Areas Milan
 
 Piattaforma web per scoprire i migliori spazi dove **studiare e lavorare a Milano**:
 caffetterie, biblioteche, coworking e librerie, con info su WiFi, prese, sedute,
