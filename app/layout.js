@@ -1,5 +1,6 @@
 import "@/styles/globals.css";
 import { Poppins, Nunito } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FavoritesProvider from "@/components/FavoritesProvider";
@@ -48,6 +49,7 @@ export default function RootLayout({ children }) {
             <Footer />
           </AuthPromptProvider>
         </FavoritesProvider>
+        <Analytics />
       </body>
     </html>
   );
