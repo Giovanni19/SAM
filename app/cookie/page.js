@@ -1,9 +1,7 @@
-import Link from "next/link";
+"use client";
 
-export const metadata = {
-  title: "Cookie policy — SAM",
-  description: "Quali cookie usa SAM — Study Areas Milan e perché.",
-};
+import Link from "next/link";
+import { resetConsentChoice } from "@/components/CookieConsentBanner";
 
 export default function CookiePage() {
   return (
@@ -15,14 +13,23 @@ export default function CookiePage() {
 
       <section className="mt-8 space-y-2 text-sm leading-relaxed text-sam-brown/90">
         <p>
-          SAM utilizza <strong>esclusivamente cookie tecnici necessari</strong> al funzionamento del
-          sito. Per questi cookie <strong>non è richiesto il consenso</strong>, come previsto dalla
-          normativa (art. 122 del Codice Privacy e Linee guida del Garante).
+          SAM utilizza <strong>cookie tecnici necessari</strong> al funzionamento del sito, per cui{" "}
+          <strong>non è richiesto il consenso</strong> (art. 122 del Codice Privacy e Linee guida del
+          Garante), e <strong>cookie di analisi</strong> (Google Analytics, tramite Google Tag Manager)
+          che vengono attivati <strong>solo se dai il tuo consenso esplicito</strong> dal banner mostrato
+          alla prima visita.
         </p>
         <p>
-          Non utilizziamo cookie di profilazione pubblicitaria né strumenti di tracciamento di terze
-          parti. Se in futuro introdurremo cookie non necessari, ti chiederemo il consenso preventivo
-          tramite un apposito banner.
+          Finché non accetti, questi cookie restano bloccati (Google Consent Mode). Puoi cambiare la tua
+          scelta in qualsiasi momento:{" "}
+          <button
+            type="button"
+            onClick={resetConsentChoice}
+            className="font-semibold text-sam-green hover:underline"
+          >
+            gestisci il consenso cookie
+          </button>
+          .
         </p>
       </section>
 
@@ -46,6 +53,14 @@ export default function CookiePage() {
                 <td className="py-2 pr-4">Supabase</td>
                 <td className="py-2 pr-4">Mantenere l'utente autenticato tra le pagine.</td>
                 <td className="py-2">Tecnico necessario</td>
+              </tr>
+              <tr className="border-b border-sam-cream/60">
+                <td className="py-2 pr-4">
+                  <code>_ga</code>, <code>_ga_*</code>, <code>_gid</code>
+                </td>
+                <td className="py-2 pr-4">Google Analytics (via Google Tag Manager)</td>
+                <td className="py-2 pr-4">Statistiche aggregate su come viene usato il sito.</td>
+                <td className="py-2">Analisi — solo con consenso</td>
               </tr>
             </tbody>
           </table>
