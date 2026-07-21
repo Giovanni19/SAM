@@ -243,6 +243,16 @@ function SpacePreview({ space, onClose, basePath = "/spaces" }) {
         {space.zone}{space.zone && space.address ? " · " : ""}{space.address}
       </p>
 
+      {space.accessNote && (
+        <div className="mt-2 flex items-start gap-2 rounded-xl border border-sam-yellow/60 bg-sam-yellow/15 p-2.5">
+          <span className="text-sm">⚠️</span>
+          <p className="text-xs font-medium text-sam-brown">
+            <span className="font-semibold">Attenzione: </span>
+            {space.accessNote}
+          </p>
+        </div>
+      )}
+
       {space.hours && (
         <div className="mt-2">
           <OpenNowBadge hours={space.hours} size="sm" showUnknown />
