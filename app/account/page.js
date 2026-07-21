@@ -51,6 +51,9 @@ export default async function AccountPage() {
         <Link href="/favorites" className="btn-outline w-full">
           ♥ I miei preferiti
         </Link>
+        <Link href="/comments" className="btn-outline w-full">
+          💬 I miei commenti
+        </Link>
         <LogoutButton />
       </div>
 
