@@ -145,6 +145,7 @@ create table if not exists public.comments (
   content      text not null check (char_length(trim(content)) between 1 and 500),
   tags         text[] not null default '{}',
   is_anonymous boolean not null default false,
+  edited_at    timestamptz,
   created_at   timestamptz not null default now(),
   hidden       boolean not null default false
 );
@@ -153,6 +154,7 @@ create table if not exists public.comments (
 -- versione), aggiungile senza perdere dati.
 alter table public.comments add column if not exists tags text[] not null default '{}';
 alter table public.comments add column if not exists is_anonymous boolean not null default false;
+alter table public.comments add column if not exists edited_at timestamptz;
 
 create index if not exists comments_place_id_idx on public.comments (place_id, created_at desc);
 
@@ -172,6 +174,12 @@ drop policy if exists "comments_delete_own" on public.comments;
 create policy "comments_delete_own"
   on public.comments for delete
   using (auth.uid() = user_id);
+
+drop policy if exists "comments_update_own" on public.comments;
+create policy "comments_update_own"
+  on public.comments for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
 
 -- ---------- SEGNALAZIONI COMMENTI ----------
 -- Una segnalazione per utente per commento (PK composita). Dopo 3

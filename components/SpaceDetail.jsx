@@ -137,7 +137,7 @@ export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "
           </div>
 
           <div className="mt-8">
-            <Comments placeId={space.id} />
+            <Comments placeId={space.id} spaceType={space.type} />
           </div>
         </div>
 

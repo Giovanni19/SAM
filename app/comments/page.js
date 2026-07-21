@@ -19,7 +19,7 @@ export default async function MyCommentsPage() {
   const [{ data: comments }, spaces] = await Promise.all([
     supabase
       .from("comments")
-      .select("id, place_id, content, tags, created_at")
+      .select("id, place_id, content, tags, edited_at, created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false }),
     getSpaces(),

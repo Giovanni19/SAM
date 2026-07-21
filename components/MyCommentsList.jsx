@@ -2,13 +2,16 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 // Lista dei propri commenti nella pagina account, con possibilità di
 // eliminarli. `initialComments` arriva già arricchito dal server con
-// `spaceName`/`spaceHref` (lo spazio potrebbe non esistere più).
+// `spaceName`/`spaceHref` (lo spazio potrebbe non esistere più). Cliccando
+// sulla card si va allo spazio; il pulsante Elimina ferma la propagazione.
 export default function MyCommentsList({ initialComments }) {
   const [comments, setComments] = useState(initialComments);
+  const router = useRouter();
 
   async function handleDelete(id) {
     const supabase = createClient();
@@ -32,21 +35,24 @@ export default function MyCommentsList({ initialComments }) {
   return (
     <div className="space-y-3">
       {comments.map((c) => (
-        <div key={c.id} className="rounded-2xl border border-sam-cream bg-white p-4">
+        <div
+          key={c.id}
+          onClick={() => c.spaceHref && router.push(c.spaceHref)}
+          className={`rounded-2xl border border-sam-cream bg-white p-4 ${
+            c.spaceHref ? "cursor-pointer hover:border-sam-green/50" : ""
+          }`}
+        >
           <div className="flex items-center justify-between">
-            {c.spaceHref ? (
-              <Link href={c.spaceHref} className="text-sm font-semibold text-sam-green hover:underline">
-                {c.spaceName}
-              </Link>
-            ) : (
-              <span className="text-sm font-semibold text-sam-muted">Spazio non più disponibile</span>
-            )}
+            <span className="text-sm font-semibold text-sam-green">
+              {c.spaceName || "Spazio non più disponibile"}
+            </span>
             <span className="text-xs text-sam-muted">
               {new Date(c.created_at).toLocaleDateString("it-IT", {
                 day: "numeric",
                 month: "short",
                 year: "numeric",
               })}
+              {c.edited_at && " · modificato"}
             </span>
           </div>
           <p className="mt-1 whitespace-pre-wrap text-sm text-sam-brown/90">{c.content}</p>
@@ -62,7 +68,10 @@ export default function MyCommentsList({ initialComments }) {
           <div className="mt-2 flex justify-end">
             <button
               type="button"
-              onClick={() => handleDelete(c.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(c.id);
+              }}
               className="text-xs font-semibold text-sam-coral hover:underline"
             >
               Elimina
