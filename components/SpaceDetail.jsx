@@ -82,6 +82,16 @@ export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "
         </div>
       )}
 
+      {space.bookingNote && (
+        <div className="mt-4 flex items-start gap-3 rounded-2xl border border-sam-green/30 bg-sam-green/10 p-4">
+          <span className="text-lg">📅</span>
+          <p className="text-sm font-medium text-sam-brown">
+            <span className="font-semibold">Prenotazione: </span>
+            {space.bookingNote}
+          </p>
+        </div>
+      )}
+
       <div className="mt-8 grid gap-8 lg:grid-cols-3">
         {/* Colonna principale */}
         <div className="lg:col-span-2">
@@ -173,7 +183,17 @@ export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "
             </dl>
 
             <div className="mt-5 flex flex-col gap-2">
-              <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="btn-primary w-full">
+              {space.bookingUrl && (
+                <a href={space.bookingUrl} target="_blank" rel="noopener noreferrer" className="btn-primary w-full">
+                  📅 Prenota il tuo posto
+                </a>
+              )}
+              <a
+                href={mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={space.bookingUrl ? "btn-outline w-full" : "btn-primary w-full"}
+              >
                 Apri in Google Maps
               </a>
               {space.website && (
