@@ -44,6 +44,8 @@ export default function Comments({ placeId }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(null);
   const [reported, setReported] = useState([]);
+  const [likeCounts, setLikeCounts] = useState({});
+  const [likedByMe, setLikedByMe] = useState([]);
   const { show } = useAuthPrompt();
 
   const selectOption = (key, label) =>
@@ -61,9 +63,26 @@ export default function Comments({ placeId }) {
         .eq("place_id", placeId)
         .order("created_at", { ascending: false }),
     ]);
-    setUserId(userData.user?.id ?? null);
+    const uid = userData.user?.id ?? null;
+    setUserId(uid);
     if (!fetchError) setComments(rows || []);
     setReady(true);
+
+    const ids = (rows || []).map((r) => r.id);
+    if (ids.length) {
+      const { data: likes } = await supabase
+        .from("comment_likes")
+        .select("comment_id, user_id")
+        .in("comment_id", ids);
+      const counts = {};
+      const mine = [];
+      for (const l of likes || []) {
+        counts[l.comment_id] = (counts[l.comment_id] || 0) + 1;
+        if (l.user_id === uid) mine.push(l.comment_id);
+      }
+      setLikeCounts(counts);
+      setLikedByMe(mine);
+    }
   }, [placeId]);
 
   useEffect(() => {
@@ -100,6 +119,7 @@ export default function Comments({ placeId }) {
       .single();
 
     if (insertError) {
+      console.error("[comments] insert fallito:", insertError.message);
       setError("Non è stato possibile pubblicare il commento. Riprova.");
     } else {
       setComments((prev) => [inserted, ...prev]);
@@ -127,6 +147,30 @@ export default function Comments({ placeId }) {
     }
     setReported((r) => [...r, id]);
     await supabase.rpc("report_comment", { p_comment_id: id });
+  }
+
+  async function toggleLike(id) {
+    const supabase = createClient();
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData.user;
+    if (!user) {
+      show("Accedi per mettere like a un commento");
+      return;
+    }
+
+    const alreadyLiked = likedByMe.includes(id);
+    // Ottimistico: aggiorna subito, ripristina se la chiamata fallisce.
+    setLikedByMe((l) => (alreadyLiked ? l.filter((x) => x !== id) : [...l, id]));
+    setLikeCounts((c) => ({ ...c, [id]: (c[id] || 0) + (alreadyLiked ? -1 : 1) }));
+
+    const { error: likeError } = alreadyLiked
+      ? await supabase.from("comment_likes").delete().eq("comment_id", id).eq("user_id", user.id)
+      : await supabase.from("comment_likes").insert({ comment_id: id, user_id: user.id });
+
+    if (likeError) {
+      setLikedByMe((l) => (alreadyLiked ? [...l, id] : l.filter((x) => x !== id)));
+      setLikeCounts((c) => ({ ...c, [id]: (c[id] || 0) + (alreadyLiked ? 1 : -1) }));
+    }
   }
 
   return (
@@ -214,7 +258,17 @@ export default function Comments({ placeId }) {
                 ))}
               </div>
             )}
-            <div className="mt-2 flex justify-end gap-3 text-xs">
+            <div className="mt-2 flex items-center justify-between gap-3 text-xs">
+              <button
+                type="button"
+                onClick={() => toggleLike(c.id)}
+                aria-pressed={likedByMe.includes(c.id)}
+                className={`flex items-center gap-1 font-semibold ${
+                  likedByMe.includes(c.id) ? "text-sam-coral" : "text-sam-muted hover:text-sam-coral"
+                }`}
+              >
+                {likedByMe.includes(c.id) ? "❤️" : "🤍"} {likeCounts[c.id] || 0}
+              </button>
               {c.user_id === userId ? (
                 <button
                   type="button"

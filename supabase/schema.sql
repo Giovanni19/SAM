@@ -221,3 +221,28 @@ $$;
 
 revoke all on function public.report_comment(uuid) from public, anon;
 grant execute on function public.report_comment(uuid) to authenticated;
+
+-- ---------- LIKE COMMENTI ----------
+-- Un like per utente per commento (PK composita, come le segnalazioni).
+-- Il conteggio si legge lato client aggregando le righe: chiunque le legge,
+-- solo chi è loggato può mettere/togliere il proprio like.
+create table if not exists public.comment_likes (
+  comment_id  uuid not null references public.comments (id) on delete cascade,
+  user_id     uuid not null references auth.users (id) on delete cascade,
+  created_at  timestamptz not null default now(),
+  primary key (comment_id, user_id)
+);
+
+alter table public.comment_likes enable row level security;
+
+drop policy if exists "comment_likes_select_all" on public.comment_likes;
+create policy "comment_likes_select_all"
+  on public.comment_likes for select using (true);
+
+drop policy if exists "comment_likes_insert_own" on public.comment_likes;
+create policy "comment_likes_insert_own"
+  on public.comment_likes for insert with check (auth.uid() = user_id);
+
+drop policy if exists "comment_likes_delete_own" on public.comment_likes;
+create policy "comment_likes_delete_own"
+  on public.comment_likes for delete using (auth.uid() = user_id);
