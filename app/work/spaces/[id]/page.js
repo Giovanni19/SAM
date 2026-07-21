@@ -21,7 +21,12 @@ export default async function WorkSpaceDetailPage({ params }) {
 
   return (
     <div className="theme-work">
-      <SpaceDetail space={space} backHref="/work/spaces" backLabel="← Tutti i coworking" />
+      <SpaceDetail
+        space={space}
+        backHref="/work/spaces"
+        backLabel="← Tutti i coworking"
+        amenitiesTitle="Com'è per lavorare"
+      />
     </div>
   );
 }

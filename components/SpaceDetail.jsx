@@ -16,7 +16,7 @@ const TONE = {
 // Dettaglio di uno spazio. Riusato da SAM (/spaces/[id]) e SAM for Work
 // (/work/spaces/[id]); `backHref`/`backLabel` cambiano il link "indietro", e
 // il tema rosso arriva dal wrapper .theme-work della pagina Work.
-export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "← Tutti gli spazi" }) {
+export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "← Tutti gli spazi", amenitiesTitle = "Com'è per studiare" }) {
   const meta = typeMeta(space.type);
   const amenities = getAmenities(space);
   const mapsUrl =
@@ -94,7 +94,7 @@ export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "
 
           {/* Aspetti / amenità come sotto-punti */}
           <h2 className="mt-8 font-display text-xl font-bold text-sam-green">
-            Com'è per studiare
+            {amenitiesTitle}
           </h2>
           <ul className="mt-3 divide-y divide-sam-cream rounded-2xl border border-sam-cream bg-white">
             {amenities.map((a) => {
