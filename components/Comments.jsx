@@ -12,14 +12,15 @@ const inputClass =
 // Una sola scelta per categoria (pro/neutro/contro): evita combinazioni
 // contraddittorie tipo "WiFi veloce" + "WiFi lento" sullo stesso commento.
 const FEEDBACK_CATEGORIES = [
-  { key: "pulizia", options: ["🧼 Ambiente pulito", "😐 Ambiente nella media", "🧹 Poco pulito"] },
-  { key: "bagno", options: ["🚻 Bagno pulito", "😐 Bagno nella media", "🚽 Bagno sporco"] },
-  { key: "wifi", options: ["📶 WiFi veloce", "😐 WiFi nella media", "📵 WiFi lento o assente"] },
-  { key: "prese", options: ["🔌 Tante prese", "😐 Prese sufficienti", "🪫 Poche prese"] },
-  { key: "rumore", options: ["🤫 Tranquillo per concentrarsi", "😐 Rumore nella media", "🔊 Troppo rumoroso"] },
-  { key: "posti", options: ["🪑 Posti comodi", "😐 Posti nella media", "🥴 Posti scomodi"] },
-  { key: "personale", options: ["😊 Personale gentile", "😐 Personale nella media", "😒 Personale scortese"] },
-  { key: "prezzi", options: ["💰 Prezzi onesti", "😐 Prezzi nella media", "💸 Prezzi alti"] },
+  { key: "pulizia", label: "Pulizia", options: ["🧼 Ambiente pulito", "😐 Ambiente nella media", "🧹 Poco pulito"] },
+  { key: "bagno", label: "Bagno", options: ["🚻 Bagno pulito", "😐 Bagno nella media", "🚽 Bagno sporco"] },
+  { key: "wifi", label: "WiFi", options: ["📶 WiFi veloce", "😐 WiFi nella media", "📵 WiFi lento o assente"] },
+  { key: "prese", label: "Prese", options: ["🔌 Tante prese", "😐 Prese sufficienti", "🪫 Poche prese"] },
+  { key: "rumore", label: "Rumore", options: ["🤫 Tranquillo per concentrarsi", "😐 Rumore nella media", "🔊 Troppo rumoroso"] },
+  { key: "posti", label: "Posti a sedere", options: ["🪑 Posti comodi", "😐 Posti nella media", "🥴 Posti scomodi"] },
+  { key: "personale", label: "Personale", options: ["😊 Personale gentile", "😐 Personale nella media", "😒 Personale scortese"] },
+  { key: "prezzi", label: "Prezzi", options: ["💰 Prezzi onesti", "😐 Prezzi nella media", "💸 Prezzi alti"] },
+  { key: "accessibilita", label: "Accessibilità", options: ["♿ Accessibile in carrozzina", "😐 Accessibilità nella media", "🚫 Non accessibile"] },
 ];
 // Stile del chip in base alla posizione nella terna (0=pro, 1=neutro, 2=contro).
 const TONE_CLASS = [
@@ -135,21 +136,22 @@ export default function Comments({ placeId }) {
 
         {/* Feedback rapido, opzionale: una scelta pro/neutro/contro per categoria. */}
         <div className="space-y-1.5">
-          {FEEDBACK_CATEGORIES.map(({ key, options }) => (
-            <div key={key} className="flex flex-wrap gap-1.5">
-              {options.map((label, i) => {
-                const active = selected[key] === label;
+          {FEEDBACK_CATEGORIES.map(({ key, label, options }) => (
+            <div key={key} className="flex flex-wrap items-center gap-1.5">
+              <span className="w-28 shrink-0 text-xs font-semibold text-sam-green">{label}</span>
+              {options.map((opt, i) => {
+                const active = selected[key] === opt;
                 return (
                   <button
-                    key={label}
+                    key={opt}
                     type="button"
                     aria-pressed={active}
-                    onClick={() => selectOption(key, label)}
+                    onClick={() => selectOption(key, opt)}
                     className={`rounded-full px-3 py-1 text-xs font-medium transition ${
                       active ? TONE_CLASS[i] : "bg-sam-cream text-sam-brown hover:bg-sam-cream/70"
                     }`}
                   >
-                    {label}
+                    {opt}
                   </button>
                 );
               })}
