@@ -3,13 +3,30 @@
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthPrompt } from "@/components/AuthPrompt";
-import { AMENITY_FILTERS } from "@/lib/utils";
 
 const inputClass =
   "w-full rounded-xl border border-sam-cream bg-sam-paper px-4 py-2.5 text-sm outline-none focus:border-sam-green";
 
-// Stessa icona usata da getAmenities() per ogni categoria di filtro.
-const GROUP_ICON = { wifi: "📶", prese: "🔌", sedute: "🪑", rumore: "🔊", stayPolicy: "⏱️", ac: "❄️" };
+// Feedback libero di chi ha usato il posto — non è lo stesso "verificato"
+// dei filtri (quello descrive lo spazio, questo l'esperienza di chi ci va).
+// Una sola scelta per categoria (pro/neutro/contro): evita combinazioni
+// contraddittorie tipo "WiFi veloce" + "WiFi lento" sullo stesso commento.
+const FEEDBACK_CATEGORIES = [
+  { key: "pulizia", options: ["🧼 Ambiente pulito", "😐 Ambiente nella media", "🧹 Poco pulito"] },
+  { key: "bagno", options: ["🚻 Bagno pulito", "😐 Bagno nella media", "🚽 Bagno sporco"] },
+  { key: "wifi", options: ["📶 WiFi veloce", "😐 WiFi nella media", "📵 WiFi lento o assente"] },
+  { key: "prese", options: ["🔌 Tante prese", "😐 Prese sufficienti", "🪫 Poche prese"] },
+  { key: "rumore", options: ["🤫 Tranquillo per concentrarsi", "😐 Rumore nella media", "🔊 Troppo rumoroso"] },
+  { key: "posti", options: ["🪑 Posti comodi", "😐 Posti nella media", "🥴 Posti scomodi"] },
+  { key: "personale", options: ["😊 Personale gentile", "😐 Personale nella media", "😒 Personale scortese"] },
+  { key: "prezzi", options: ["💰 Prezzi onesti", "😐 Prezzi nella media", "💸 Prezzi alti"] },
+];
+// Stile del chip in base alla posizione nella terna (0=pro, 1=neutro, 2=contro).
+const TONE_CLASS = [
+  "bg-sam-green text-sam-paper",
+  "bg-sam-muted text-sam-paper",
+  "bg-sam-coral text-sam-paper",
+];
 
 // Commenti pubblici per spazio. Chiunque li legge; solo chi è loggato può
 // scriverne o segnalarne uno altrui. Moderazione minima: dopo 3 segnalazioni
@@ -20,14 +37,17 @@ export default function Comments({ placeId }) {
   const [ready, setReady] = useState(false);
   const [userId, setUserId] = useState(null);
   const [content, setContent] = useState("");
-  const [tags, setTags] = useState([]);
+  // Una scelta per categoria: { pulizia: "🧼 Ambiente pulito", wifi: "😐 WiFi nella media", ... }
+  const [selected, setSelected] = useState({});
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(null);
   const [reported, setReported] = useState([]);
   const { show } = useAuthPrompt();
 
-  const toggleTag = (label) =>
-    setTags((t) => (t.includes(label) ? t.filter((x) => x !== label) : [...t, label]));
+  const selectOption = (key, label) =>
+    setSelected((s) => (s[key] === label ? { ...s, [key]: undefined } : { ...s, [key]: label }));
+
+  const tags = Object.values(selected).filter(Boolean);
 
   const load = useCallback(async () => {
     const supabase = createClient();
@@ -75,7 +95,7 @@ export default function Comments({ placeId }) {
     } else {
       setComments((prev) => [inserted, ...prev]);
       setContent("");
-      setTags([]);
+      setSelected({});
     }
     setPending(false);
   }
@@ -113,27 +133,23 @@ export default function Comments({ placeId }) {
           className={`${inputClass} resize-none`}
         />
 
-        {/* Indicatori rapidi, come i filtri (WiFi/Prese/Sedute/Rumore/…): scelta
-            libera e opzionale di ciò che l'utente ha notato di persona. */}
-        <div className="space-y-2">
-          {AMENITY_FILTERS.map(({ key, label, map }) => (
-            <div key={key} className="flex flex-wrap items-center gap-1.5">
-              <span className="w-24 shrink-0 text-xs font-semibold text-sam-green">
-                {GROUP_ICON[key]} {label}
-              </span>
-              {Object.entries(map).map(([value, meta]) => {
-                const active = tags.includes(meta.label);
+        {/* Feedback rapido, opzionale: una scelta pro/neutro/contro per categoria. */}
+        <div className="space-y-1.5">
+          {FEEDBACK_CATEGORIES.map(({ key, options }) => (
+            <div key={key} className="flex flex-wrap gap-1.5">
+              {options.map((label, i) => {
+                const active = selected[key] === label;
                 return (
                   <button
-                    key={value}
+                    key={label}
                     type="button"
                     aria-pressed={active}
-                    onClick={() => toggleTag(meta.label)}
+                    onClick={() => selectOption(key, label)}
                     className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                      active ? "bg-sam-green text-sam-paper" : "bg-sam-cream text-sam-brown hover:bg-sam-cream/70"
+                      active ? TONE_CLASS[i] : "bg-sam-cream text-sam-brown hover:bg-sam-cream/70"
                     }`}
                   >
-                    {meta.label}
+                    {label}
                   </button>
                 );
               })}
