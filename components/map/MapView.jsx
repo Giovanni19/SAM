@@ -66,6 +66,8 @@ export default function MapView({ spaces = [], hideType = false, basePath = "/sp
     () => filtered.find((s) => s.id === selectedId) || null,
     [filtered, selectedId]
   );
+  // Ricliccando lo stesso posto lo si deseleziona.
+  const toggleSelect = (id) => setSelectedId((cur) => (cur === id ? null : id));
 
   const [userPos, setUserPos] = useState(null);
   const [status, setStatus] = useState("idle");
@@ -142,7 +144,7 @@ export default function MapView({ spaces = [], hideType = false, basePath = "/sp
             spaces={filtered}
             userPos={userPos}
             selectedId={selectedId}
-            onSelect={setSelectedId}
+            onSelect={toggleSelect}
           />
           <button
             onClick={locate}
@@ -177,7 +179,7 @@ export default function MapView({ spaces = [], hideType = false, basePath = "/sp
                   return (
                     <li key={s.id}>
                       <button
-                        onClick={() => setSelectedId(s.id)}
+                        onClick={() => toggleSelect(s.id)}
                         className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition hover:bg-sam-cream"
                       >
                         <span className="text-lg">{meta.emoji}</span>
