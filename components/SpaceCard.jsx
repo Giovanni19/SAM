@@ -64,6 +64,12 @@ export default function SpaceCard({ space, basePath = "/spaces" }) {
 
         {space.hours && <OpenNowBadge hours={space.hours} size="sm" />}
 
+        {space.accessNote && (
+          <p className="inline-flex w-fit items-center gap-1 rounded-full bg-sam-yellow/20 px-2.5 py-1 text-xs font-semibold text-sam-brown">
+            ⚠️ Accesso con firma residente
+          </p>
+        )}
+
         {/* Amenità sintetiche */}
         {amenities.length > 0 && (
           <ul className="mt-auto flex flex-wrap gap-x-3 gap-y-1 pt-2 text-xs text-sam-brown/80">

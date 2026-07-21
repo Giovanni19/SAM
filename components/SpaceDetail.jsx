@@ -72,6 +72,16 @@ export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "
         </div>
       </div>
 
+      {space.accessNote && (
+        <div className="mt-4 flex items-start gap-3 rounded-2xl border border-sam-yellow/60 bg-sam-yellow/15 p-4">
+          <span className="text-lg">⚠️</span>
+          <p className="text-sm font-medium text-sam-brown">
+            <span className="font-semibold">Attenzione: </span>
+            {space.accessNote}
+          </p>
+        </div>
+      )}
+
       <div className="mt-8 grid gap-8 lg:grid-cols-3">
         {/* Colonna principale */}
         <div className="lg:col-span-2">
