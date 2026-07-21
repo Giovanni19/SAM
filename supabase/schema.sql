@@ -132,3 +132,90 @@ create policy "favorites_insert_own"
 drop policy if exists "favorites_delete_own" on public.favorites;
 create policy "favorites_delete_own"
   on public.favorites for delete using (auth.uid() = user_id);
+
+-- ---------- COMMENTI ----------
+-- place_id = id del posto (stesso id usato dall'app, da Notion).
+-- user_name è uno snapshot del nome al momento dell'invio (da user_metadata):
+-- evita di dover rendere leggibili i profili altrui solo per mostrare un nome.
+create table if not exists public.comments (
+  id          uuid primary key default gen_random_uuid(),
+  place_id    text not null,
+  user_id     uuid not null references auth.users (id) on delete cascade,
+  user_name   text not null,
+  content     text not null check (char_length(trim(content)) between 1 and 500),
+  tags        text[] not null default '{}',
+  created_at  timestamptz not null default now(),
+  hidden      boolean not null default false
+);
+
+-- Se la tabella esisteva già senza questa colonna (creata prima di questa
+-- versione), aggiungila senza perdere dati.
+alter table public.comments add column if not exists tags text[] not null default '{}';
+
+create index if not exists comments_place_id_idx on public.comments (place_id, created_at desc);
+
+alter table public.comments enable row level security;
+
+drop policy if exists "comments_select_visible" on public.comments;
+create policy "comments_select_visible"
+  on public.comments for select
+  using (not hidden or auth.uid() = user_id);
+
+drop policy if exists "comments_insert_own" on public.comments;
+create policy "comments_insert_own"
+  on public.comments for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "comments_delete_own" on public.comments;
+create policy "comments_delete_own"
+  on public.comments for delete
+  using (auth.uid() = user_id);
+
+-- ---------- SEGNALAZIONI COMMENTI ----------
+-- Una segnalazione per utente per commento (PK composita). Dopo 3
+-- segnalazioni distinte il commento si nasconde da solo (moderazione minima,
+-- niente pannello admin: in caso di abuso si rivede da Supabase).
+create table if not exists public.comment_reports (
+  comment_id  uuid not null references public.comments (id) on delete cascade,
+  user_id     uuid not null references auth.users (id) on delete cascade,
+  created_at  timestamptz not null default now(),
+  primary key (comment_id, user_id)
+);
+
+alter table public.comment_reports enable row level security;
+
+drop policy if exists "comment_reports_select_own" on public.comment_reports;
+create policy "comment_reports_select_own"
+  on public.comment_reports for select using (auth.uid() = user_id);
+
+-- Niente policy insert diretta sulla tabella: passa solo dalla funzione
+-- report_comment() qui sotto, così conteggio e auto-hide restano coerenti.
+
+create or replace function public.report_comment(p_comment_id uuid)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_count int;
+begin
+  if auth.uid() is null then
+    raise exception 'Non autenticato';
+  end if;
+
+  insert into public.comment_reports (comment_id, user_id)
+  values (p_comment_id, auth.uid())
+  on conflict do nothing;
+
+  select count(*) into v_count
+  from public.comment_reports
+  where comment_id = p_comment_id;
+
+  if v_count >= 3 then
+    update public.comments set hidden = true where id = p_comment_id;
+  end if;
+end;
+$$;
+
+revoke all on function public.report_comment(uuid) from public, anon;
+grant execute on function public.report_comment(uuid) to authenticated;

@@ -3,6 +3,7 @@ import { typeMeta, getAmenities } from "@/lib/utils";
 import FavoriteButton from "@/components/FavoriteButton";
 import PopularTimesChart from "@/components/PopularTimesChart";
 import OpenNowBadge from "@/components/OpenNowBadge";
+import Comments from "@/components/Comments";
 
 const DAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const DAY_LABEL = { mon: "Lun", tue: "Mar", wed: "Mer", thu: "Gio", fri: "Ven", sat: "Sab", sun: "Dom" };
@@ -133,6 +134,10 @@ export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "
                 </div>
               )}
             </div>
+          </div>
+
+          <div className="mt-8">
+            <Comments placeId={space.id} />
           </div>
         </div>
 
