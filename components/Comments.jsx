@@ -40,6 +40,7 @@ export default function Comments({ placeId }) {
   const [content, setContent] = useState("");
   // Una scelta per categoria: { pulizia: "🧼 Ambiente pulito", wifi: "😐 WiFi nella media", ... }
   const [selected, setSelected] = useState({});
+  const [anonymous, setAnonymous] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(null);
   const [reported, setReported] = useState([]);
@@ -56,7 +57,7 @@ export default function Comments({ placeId }) {
       supabase.auth.getUser(),
       supabase
         .from("comments")
-        .select("id, user_id, user_name, content, tags, created_at")
+        .select("id, user_id, user_name, content, tags, is_anonymous, created_at")
         .eq("place_id", placeId)
         .order("created_at", { ascending: false }),
     ]);
@@ -87,8 +88,15 @@ export default function Comments({ placeId }) {
     const userName = user.user_metadata?.full_name || user.email?.split("@")[0] || "Utente SAM";
     const { data: inserted, error: insertError } = await supabase
       .from("comments")
-      .insert({ place_id: placeId, user_id: user.id, user_name: userName, content: trimmed, tags })
-      .select("id, user_id, user_name, content, tags, created_at")
+      .insert({
+        place_id: placeId,
+        user_id: user.id,
+        user_name: userName,
+        content: trimmed,
+        tags,
+        is_anonymous: anonymous,
+      })
+      .select("id, user_id, user_name, content, tags, is_anonymous, created_at")
       .single();
 
     if (insertError) {
@@ -97,6 +105,7 @@ export default function Comments({ placeId }) {
       setComments((prev) => [inserted, ...prev]);
       setContent("");
       setSelected({});
+      setAnonymous(false);
     }
     setPending(false);
   }
@@ -160,7 +169,16 @@ export default function Comments({ placeId }) {
         </div>
 
         {error && <p className="text-sm text-sam-coral">{error}</p>}
-        <div className="flex justify-end">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <label className="flex items-center gap-2 text-xs font-medium text-sam-brown">
+            <input
+              type="checkbox"
+              checked={anonymous}
+              onChange={(e) => setAnonymous(e.target.checked)}
+              className="h-4 w-4 rounded border-sam-cream text-sam-green focus:ring-sam-green"
+            />
+            Commenta in modo anonimo
+          </label>
           <button type="submit" disabled={pending || !content.trim()} className="btn-primary disabled:opacity-60">
             {pending ? "Pubblicazione…" : "Pubblica commento"}
           </button>
@@ -175,7 +193,9 @@ export default function Comments({ placeId }) {
         {comments.map((c) => (
           <div key={c.id} className="rounded-2xl border border-sam-cream bg-white p-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-sam-green">{c.user_name}</span>
+              <span className="text-sm font-semibold text-sam-green">
+                {c.is_anonymous ? "🕶️ Anonimo" : c.user_name}
+              </span>
               <span className="text-xs text-sam-muted">
                 {new Date(c.created_at).toLocaleDateString("it-IT", {
                   day: "numeric",

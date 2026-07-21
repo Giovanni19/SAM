@@ -138,19 +138,21 @@ create policy "favorites_delete_own"
 -- user_name è uno snapshot del nome al momento dell'invio (da user_metadata):
 -- evita di dover rendere leggibili i profili altrui solo per mostrare un nome.
 create table if not exists public.comments (
-  id          uuid primary key default gen_random_uuid(),
-  place_id    text not null,
-  user_id     uuid not null references auth.users (id) on delete cascade,
-  user_name   text not null,
-  content     text not null check (char_length(trim(content)) between 1 and 500),
-  tags        text[] not null default '{}',
-  created_at  timestamptz not null default now(),
-  hidden      boolean not null default false
+  id           uuid primary key default gen_random_uuid(),
+  place_id     text not null,
+  user_id      uuid not null references auth.users (id) on delete cascade,
+  user_name    text not null,
+  content      text not null check (char_length(trim(content)) between 1 and 500),
+  tags         text[] not null default '{}',
+  is_anonymous boolean not null default false,
+  created_at   timestamptz not null default now(),
+  hidden       boolean not null default false
 );
 
--- Se la tabella esisteva già senza questa colonna (creata prima di questa
--- versione), aggiungila senza perdere dati.
+-- Se la tabella esisteva già senza queste colonne (create prima di questa
+-- versione), aggiungile senza perdere dati.
 alter table public.comments add column if not exists tags text[] not null default '{}';
+alter table public.comments add column if not exists is_anonymous boolean not null default false;
 
 create index if not exists comments_place_id_idx on public.comments (place_id, created_at desc);
 
