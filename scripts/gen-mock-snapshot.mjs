@@ -110,6 +110,9 @@ function normalizeSpace(page) {
     phone: getPhone(p["Telefono"]) || null,
     hours: parseHours(getText(p["Orari"])),
     popularTimes: parsePopularTimes(getText(p["Affollamento"])),
+    accessNote: getText(p["Note Accesso"]) || null,
+    bookingNote: getText(p["Note Prenotazione"]) || null,
+    bookingUrl: getUrl(p["Prenotazione URL"]) || null,
   };
 }
 
