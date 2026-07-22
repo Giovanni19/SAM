@@ -29,11 +29,46 @@ const TONE_CLASS = [
   "bg-sam-coral text-sam-paper",
 ];
 
+// Selettore pro/neutro/contro per categoria: usato sia per un nuovo commento
+// che per modificarne uno esistente.
+function CategoryPicker({ categories, selected, onSelect }) {
+  return (
+    <div className="space-y-1.5">
+      {categories.map(({ key, label, options }) => (
+        <div key={key} className="flex flex-wrap items-center gap-1.5">
+          <span className="w-28 shrink-0 text-xs font-semibold text-sam-green">{label}</span>
+          {options.map((opt, i) => {
+            const active = selected[key] === opt;
+            return (
+              <button
+                key={opt}
+                type="button"
+                aria-pressed={active}
+                onClick={() => onSelect(key, opt)}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                  active ? TONE_CLASS[i] : "bg-sam-cream text-sam-brown hover:bg-sam-cream/70"
+                }`}
+              >
+                {opt}
+              </button>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // Commenti pubblici per spazio. Chiunque li legge; solo chi è loggato può
-// scriverne o segnalarne uno altrui. Moderazione minima: dopo 3 segnalazioni
-// distinte un commento si nasconde da solo (vedi report_comment() in
-// supabase/schema.sql) — niente pannello admin per ora.
-export default function Comments({ placeId }) {
+// scriverne, modificarne uno proprio o segnalarne uno altrui. Moderazione
+// minima: dopo 3 segnalazioni distinte un commento si nasconde da solo (vedi
+// report_comment() in supabase/schema.sql) — niente pannello admin per ora.
+export default function Comments({ placeId, spaceType }) {
+  // Le biblioteche non hanno un prezzo da valutare.
+  const categories = FEEDBACK_CATEGORIES.filter(
+    (c) => !(spaceType === "Biblioteca" && c.key === "prezzi")
+  );
+
   const [comments, setComments] = useState([]);
   const [ready, setReady] = useState(false);
   const [userId, setUserId] = useState(null);
@@ -44,10 +79,18 @@ export default function Comments({ placeId }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(null);
   const [reported, setReported] = useState([]);
+  const [likeCounts, setLikeCounts] = useState({});
+  const [likedByMe, setLikedByMe] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+  const [editContent, setEditContent] = useState("");
+  const [editSelected, setEditSelected] = useState({});
+  const [editPending, setEditPending] = useState(false);
   const { show } = useAuthPrompt();
 
   const selectOption = (key, label) =>
     setSelected((s) => (s[key] === label ? { ...s, [key]: undefined } : { ...s, [key]: label }));
+  const selectEditOption = (key, label) =>
+    setEditSelected((s) => (s[key] === label ? { ...s, [key]: undefined } : { ...s, [key]: label }));
 
   const tags = Object.values(selected).filter(Boolean);
 
@@ -57,13 +100,30 @@ export default function Comments({ placeId }) {
       supabase.auth.getUser(),
       supabase
         .from("comments")
-        .select("id, user_id, user_name, content, tags, is_anonymous, created_at")
+        .select("id, user_id, user_name, content, tags, is_anonymous, edited_at, created_at")
         .eq("place_id", placeId)
         .order("created_at", { ascending: false }),
     ]);
-    setUserId(userData.user?.id ?? null);
+    const uid = userData.user?.id ?? null;
+    setUserId(uid);
     if (!fetchError) setComments(rows || []);
     setReady(true);
+
+    const ids = (rows || []).map((r) => r.id);
+    if (ids.length) {
+      const { data: likes } = await supabase
+        .from("comment_likes")
+        .select("comment_id, user_id")
+        .in("comment_id", ids);
+      const counts = {};
+      const mine = [];
+      for (const l of likes || []) {
+        counts[l.comment_id] = (counts[l.comment_id] || 0) + 1;
+        if (l.user_id === uid) mine.push(l.comment_id);
+      }
+      setLikeCounts(counts);
+      setLikedByMe(mine);
+    }
   }, [placeId]);
 
   useEffect(() => {
@@ -96,10 +156,11 @@ export default function Comments({ placeId }) {
         tags,
         is_anonymous: anonymous,
       })
-      .select("id, user_id, user_name, content, tags, is_anonymous, created_at")
+      .select("id, user_id, user_name, content, tags, is_anonymous, edited_at, created_at")
       .single();
 
     if (insertError) {
+      console.error("[comments] insert fallito:", insertError.message);
       setError("Non è stato possibile pubblicare il commento. Riprova.");
     } else {
       setComments((prev) => [inserted, ...prev]);
@@ -129,6 +190,66 @@ export default function Comments({ placeId }) {
     await supabase.rpc("report_comment", { p_comment_id: id });
   }
 
+  async function toggleLike(id) {
+    const supabase = createClient();
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData.user;
+    if (!user) {
+      show("Accedi per mettere like a un commento");
+      return;
+    }
+
+    const alreadyLiked = likedByMe.includes(id);
+    // Ottimistico: aggiorna subito, ripristina se la chiamata fallisce.
+    setLikedByMe((l) => (alreadyLiked ? l.filter((x) => x !== id) : [...l, id]));
+    setLikeCounts((c) => ({ ...c, [id]: (c[id] || 0) + (alreadyLiked ? -1 : 1) }));
+
+    const { error: likeError } = alreadyLiked
+      ? await supabase.from("comment_likes").delete().eq("comment_id", id).eq("user_id", user.id)
+      : await supabase.from("comment_likes").insert({ comment_id: id, user_id: user.id });
+
+    if (likeError) {
+      setLikedByMe((l) => (alreadyLiked ? [...l, id] : l.filter((x) => x !== id)));
+      setLikeCounts((c) => ({ ...c, [id]: (c[id] || 0) + (alreadyLiked ? 1 : -1) }));
+    }
+  }
+
+  function startEdit(c) {
+    setEditingId(c.id);
+    setEditContent(c.content);
+    const sel = {};
+    for (const cat of categories) {
+      const found = (c.tags || []).find((t) => cat.options.includes(t));
+      if (found) sel[cat.key] = found;
+    }
+    setEditSelected(sel);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+  }
+
+  async function saveEdit(id) {
+    const trimmed = editContent.trim();
+    if (!trimmed) return;
+
+    setEditPending(true);
+    const supabase = createClient();
+    const editTags = Object.values(editSelected).filter(Boolean);
+    const { data: updated, error: updateError } = await supabase
+      .from("comments")
+      .update({ content: trimmed, tags: editTags, edited_at: new Date().toISOString() })
+      .eq("id", id)
+      .select("id, user_id, user_name, content, tags, is_anonymous, edited_at, created_at")
+      .single();
+
+    if (!updateError) {
+      setComments((prev) => prev.map((c) => (c.id === id ? updated : c)));
+      setEditingId(null);
+    }
+    setEditPending(false);
+  }
+
   return (
     <div>
       <h2 className="font-display text-xl font-bold text-sam-green">Commenti</h2>
@@ -144,29 +265,7 @@ export default function Comments({ placeId }) {
         />
 
         {/* Feedback rapido, opzionale: una scelta pro/neutro/contro per categoria. */}
-        <div className="space-y-1.5">
-          {FEEDBACK_CATEGORIES.map(({ key, label, options }) => (
-            <div key={key} className="flex flex-wrap items-center gap-1.5">
-              <span className="w-28 shrink-0 text-xs font-semibold text-sam-green">{label}</span>
-              {options.map((opt, i) => {
-                const active = selected[key] === opt;
-                return (
-                  <button
-                    key={opt}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => selectOption(key, opt)}
-                    className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                      active ? TONE_CLASS[i] : "bg-sam-cream text-sam-brown hover:bg-sam-cream/70"
-                    }`}
-                  >
-                    {opt}
-                  </button>
-                );
-              })}
-            </div>
-          ))}
-        </div>
+        <CategoryPicker categories={categories} selected={selected} onSelect={selectOption} />
 
         {error && <p className="text-sm text-sam-coral">{error}</p>}
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -190,52 +289,100 @@ export default function Comments({ placeId }) {
         {ready && comments.length === 0 && (
           <p className="text-sm text-sam-muted">Ancora nessun commento: scrivi il primo.</p>
         )}
-        {comments.map((c) => (
-          <div key={c.id} className="rounded-2xl border border-sam-cream bg-white p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-sam-green">
-                {c.is_anonymous ? "🕶️ Anonimo" : c.user_name}
-              </span>
-              <span className="text-xs text-sam-muted">
-                {new Date(c.created_at).toLocaleDateString("it-IT", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                })}
-              </span>
-            </div>
-            <p className="mt-1 whitespace-pre-wrap text-sm text-sam-brown/90">{c.content}</p>
-            {c.tags?.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {c.tags.map((t) => (
-                  <span key={t} className="rounded-full bg-sam-cream px-2.5 py-0.5 text-[11px] font-medium text-sam-brown">
-                    {t}
-                  </span>
-                ))}
+        {comments.map((c) =>
+          editingId === c.id ? (
+            <div key={c.id} className="rounded-2xl border border-sam-green bg-white p-4">
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                maxLength={500}
+                rows={3}
+                className={`${inputClass} resize-none`}
+              />
+              <div className="mt-2">
+                <CategoryPicker categories={categories} selected={editSelected} onSelect={selectEditOption} />
               </div>
-            )}
-            <div className="mt-2 flex justify-end gap-3 text-xs">
-              {c.user_id === userId ? (
+              <div className="mt-2 flex justify-end gap-2">
+                <button type="button" onClick={cancelEdit} className="btn-outline px-4 py-1.5 text-xs">
+                  Annulla
+                </button>
                 <button
                   type="button"
-                  onClick={() => handleDelete(c.id)}
-                  className="font-semibold text-sam-coral hover:underline"
+                  disabled={editPending || !editContent.trim()}
+                  onClick={() => saveEdit(c.id)}
+                  className="btn-primary px-4 py-1.5 text-xs disabled:opacity-60"
                 >
-                  Elimina
+                  {editPending ? "Salvataggio…" : "Salva modifiche"}
                 </button>
-              ) : (
-                <button
-                  type="button"
-                  disabled={reported.includes(c.id)}
-                  onClick={() => handleReport(c.id)}
-                  className="font-semibold text-sam-muted hover:underline disabled:no-underline disabled:opacity-60"
-                >
-                  {reported.includes(c.id) ? "Segnalato" : "Segnala"}
-                </button>
-              )}
+              </div>
             </div>
-          </div>
-        ))}
+          ) : (
+            <div key={c.id} className="rounded-2xl border border-sam-cream bg-white p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-sam-green">
+                  {c.is_anonymous ? "🕶️ Anonimo" : c.user_name}
+                </span>
+                <span className="text-xs text-sam-muted">
+                  {new Date(c.created_at).toLocaleDateString("it-IT", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                  {c.edited_at && " · modificato"}
+                </span>
+              </div>
+              <p className="mt-1 whitespace-pre-wrap text-sm text-sam-brown/90">{c.content}</p>
+              {c.tags?.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {c.tags.map((t) => (
+                    <span key={t} className="rounded-full bg-sam-cream px-2.5 py-0.5 text-[11px] font-medium text-sam-brown">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="mt-2 flex items-center justify-between gap-3 text-xs">
+                <button
+                  type="button"
+                  onClick={() => toggleLike(c.id)}
+                  aria-pressed={likedByMe.includes(c.id)}
+                  className={`flex items-center gap-1 font-semibold ${
+                    likedByMe.includes(c.id) ? "text-sam-coral" : "text-sam-muted hover:text-sam-coral"
+                  }`}
+                >
+                  {likedByMe.includes(c.id) ? "❤️" : "🤍"} {likeCounts[c.id] || 0}
+                </button>
+                {c.user_id === userId ? (
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => startEdit(c)}
+                      className="font-semibold text-sam-green hover:underline"
+                    >
+                      Modifica
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(c.id)}
+                      className="font-semibold text-sam-coral hover:underline"
+                    >
+                      Elimina
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={reported.includes(c.id)}
+                    onClick={() => handleReport(c.id)}
+                    className="font-semibold text-sam-muted hover:underline disabled:no-underline disabled:opacity-60"
+                  >
+                    {reported.includes(c.id) ? "Segnalato" : "Segnala"}
+                  </button>
+                )}
+              </div>
+            </div>
+          )
+        )}
       </div>
     </div>
   );

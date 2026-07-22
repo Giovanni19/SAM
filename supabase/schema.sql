@@ -145,6 +145,7 @@ create table if not exists public.comments (
   content      text not null check (char_length(trim(content)) between 1 and 500),
   tags         text[] not null default '{}',
   is_anonymous boolean not null default false,
+  edited_at    timestamptz,
   created_at   timestamptz not null default now(),
   hidden       boolean not null default false
 );
@@ -153,6 +154,7 @@ create table if not exists public.comments (
 -- versione), aggiungile senza perdere dati.
 alter table public.comments add column if not exists tags text[] not null default '{}';
 alter table public.comments add column if not exists is_anonymous boolean not null default false;
+alter table public.comments add column if not exists edited_at timestamptz;
 
 create index if not exists comments_place_id_idx on public.comments (place_id, created_at desc);
 
@@ -172,6 +174,12 @@ drop policy if exists "comments_delete_own" on public.comments;
 create policy "comments_delete_own"
   on public.comments for delete
   using (auth.uid() = user_id);
+
+drop policy if exists "comments_update_own" on public.comments;
+create policy "comments_update_own"
+  on public.comments for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
 
 -- ---------- SEGNALAZIONI COMMENTI ----------
 -- Una segnalazione per utente per commento (PK composita). Dopo 3
@@ -221,3 +229,28 @@ $$;
 
 revoke all on function public.report_comment(uuid) from public, anon;
 grant execute on function public.report_comment(uuid) to authenticated;
+
+-- ---------- LIKE COMMENTI ----------
+-- Un like per utente per commento (PK composita, come le segnalazioni).
+-- Il conteggio si legge lato client aggregando le righe: chiunque le legge,
+-- solo chi è loggato può mettere/togliere il proprio like.
+create table if not exists public.comment_likes (
+  comment_id  uuid not null references public.comments (id) on delete cascade,
+  user_id     uuid not null references auth.users (id) on delete cascade,
+  created_at  timestamptz not null default now(),
+  primary key (comment_id, user_id)
+);
+
+alter table public.comment_likes enable row level security;
+
+drop policy if exists "comment_likes_select_all" on public.comment_likes;
+create policy "comment_likes_select_all"
+  on public.comment_likes for select using (true);
+
+drop policy if exists "comment_likes_insert_own" on public.comment_likes;
+create policy "comment_likes_insert_own"
+  on public.comment_likes for insert with check (auth.uid() = user_id);
+
+drop policy if exists "comment_likes_delete_own" on public.comment_likes;
+create policy "comment_likes_delete_own"
+  on public.comment_likes for delete using (auth.uid() = user_id);
