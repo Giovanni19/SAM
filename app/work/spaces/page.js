@@ -1,4 +1,4 @@
-import { getSpaces } from "@/lib/notion";
+import { getWorkSpaces } from "@/lib/notion";
 import SpacesExplorer from "@/components/SpacesExplorer";
 
 export const metadata = {
@@ -6,8 +6,8 @@ export const metadata = {
 };
 
 export default async function WorkSpacesPage() {
-  // SAM for Work mostra solo i coworking.
-  const coworking = (await getSpaces()).filter((s) => s.type === "Coworking");
+  // SAM for Work mostra i coworking (anche se hanno anche altre categorie).
+  const coworking = await getWorkSpaces();
 
   return (
     // theme-work: rimappa gli accenti verdi su bordeaux (vedi globals.css).

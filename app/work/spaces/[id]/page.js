@@ -1,11 +1,12 @@
 import { notFound, redirect } from "next/navigation";
 import { getSpaceById, getSpaces } from "@/lib/notion";
+import { isCoworking, displayType } from "@/lib/utils";
 import SpaceDetail from "@/components/SpaceDetail";
 
 export async function generateStaticParams() {
   const spaces = await getSpaces();
-  // Solo i coworking hanno un dettaglio in SAM for Work.
-  return spaces.filter((s) => s.type === "Coworking").map((s) => ({ id: s.id }));
+  // I coworking hanno un dettaglio in SAM for Work, anche se hanno anche altre categorie.
+  return spaces.filter(isCoworking).map((s) => ({ id: s.id }));
 }
 
 export async function generateMetadata({ params }) {
@@ -16,13 +17,14 @@ export async function generateMetadata({ params }) {
 export default async function WorkSpaceDetailPage({ params }) {
   const space = await getSpaceById(params.id);
   if (!space) notFound();
-  // I posti da studio appartengono a SAM: reindirizza per tenere separate le sezioni.
-  if (space.type !== "Coworking") redirect(`/spaces/${space.id}`);
+  // I posti che non sono coworking appartengono solo a SAM: reindirizza per
+  // tenere separate le sezioni.
+  if (!isCoworking(space)) redirect(`/spaces/${space.id}`);
 
   return (
     <div className="theme-work">
       <SpaceDetail
-        space={space}
+        space={{ ...space, type: displayType(space, "work") }}
         backHref="/work/spaces"
         backLabel="← Tutti i coworking"
         amenitiesTitle="Com'è per lavorare"

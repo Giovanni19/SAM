@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getSpaces } from "@/lib/notion";
+import { getWorkSpaces } from "@/lib/notion";
 import { getZones } from "@/lib/utils";
 import SpaceList from "@/components/SpaceList";
 
@@ -10,8 +10,8 @@ export const metadata = {
 };
 
 export default async function WorkHomePage() {
-  // SAM for Work mostra solo i coworking.
-  const coworking = (await getSpaces()).filter((s) => s.type === "Coworking");
+  // SAM for Work mostra i coworking (anche se hanno anche altre categorie).
+  const coworking = await getWorkSpaces();
   const zones = getZones(coworking);
   const featured = coworking.slice(0, 6);
 

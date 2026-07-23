@@ -1,4 +1,4 @@
-import { getSpaces } from "@/lib/notion";
+import { getStudySpaces } from "@/lib/notion";
 import FavoritesGrid from "@/components/FavoritesGrid";
 
 export const metadata = {
@@ -6,8 +6,8 @@ export const metadata = {
 };
 
 export default async function FavoritesPage() {
-  // Solo posti da studio (i coworking preferiti si vedono in SAM for Work).
-  const spaces = (await getSpaces()).filter((s) => s.type !== "Coworking");
+  // Solo posti da studio (i coworking puri si vedono in SAM for Work).
+  const spaces = await getStudySpaces();
 
   return (
     <div className="container-sam py-10">

@@ -1,4 +1,4 @@
-import { getSpaces } from "@/lib/notion";
+import { getStudySpaces } from "@/lib/notion";
 import SpacesExplorer from "@/components/SpacesExplorer";
 import { TYPE_META } from "@/lib/utils";
 
@@ -7,8 +7,8 @@ export const metadata = {
 };
 
 export default async function SpacesPage({ searchParams }) {
-  // SAM mostra tutti i posti tranne i coworking (che vivono in SAM for Work).
-  const spaces = (await getSpaces()).filter((s) => s.type !== "Coworking");
+  // SAM mostra tutti i posti tranne i coworking "puri" (che vivono in SAM for Work).
+  const spaces = await getStudySpaces();
 
   // ?type=Caffetteria (dai link del footer): pre-seleziona quella categoria.
   // Accetto solo tipi validi (e mai Coworking, qui escluso).

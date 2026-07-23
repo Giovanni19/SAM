@@ -1,4 +1,4 @@
-import { getSpaces } from "@/lib/notion";
+import { getWorkSpaces } from "@/lib/notion";
 import FavoritesGrid from "@/components/FavoritesGrid";
 
 export const metadata = {
@@ -6,7 +6,7 @@ export const metadata = {
 };
 
 export default async function WorkFavoritesPage() {
-  const coworking = (await getSpaces()).filter((s) => s.type === "Coworking");
+  const coworking = await getWorkSpaces();
 
   return (
     <div className="theme-work container-sam py-10">

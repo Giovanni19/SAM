@@ -1,4 +1,5 @@
 import { getSpaces } from "@/lib/notion";
+import { isStudySpace, isCoworking } from "@/lib/utils";
 
 const BASE_URL = "https://www.studyareasmilan.it";
 
@@ -27,14 +28,15 @@ export default async function sitemap() {
     priority,
   }));
 
-  // SAM mostra tutto tranne i coworking; SAM for Work mostra solo i coworking
+  // SAM mostra tutto tranne i coworking puri; SAM for Work mostra i coworking
   // (stessa regola di generateStaticParams in app/spaces/[id] e app/work/spaces/[id]).
+  // Un posto con più categorie compare in entrambe le sitemap.
   const samEntries = spaces
-    .filter((s) => s.type !== "Coworking")
+    .filter(isStudySpace)
     .map((s) => ({ url: `${BASE_URL}/spaces/${s.id}`, lastModified: now, priority: 0.7 }));
 
   const workEntries = spaces
-    .filter((s) => s.type === "Coworking")
+    .filter(isCoworking)
     .map((s) => ({ url: `${BASE_URL}/work/spaces/${s.id}`, lastModified: now, priority: 0.7 }));
 
   return [...staticEntries, ...samEntries, ...workEntries];

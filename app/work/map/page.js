@@ -1,4 +1,4 @@
-import { getSpaces } from "@/lib/notion";
+import { getWorkSpaces } from "@/lib/notion";
 import MapView from "@/components/map/MapView";
 
 export const metadata = {
@@ -7,7 +7,7 @@ export const metadata = {
 };
 
 export default async function WorkMapPage() {
-  const coworking = (await getSpaces()).filter((s) => s.type === "Coworking");
+  const coworking = await getWorkSpaces();
   const withCoords = coworking.filter((s) => s.lat != null && s.lng != null);
 
   return (

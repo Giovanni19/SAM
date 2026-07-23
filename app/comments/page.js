@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSpaces } from "@/lib/notion";
+import { isStudySpace } from "@/lib/utils";
 import MyCommentsList from "@/components/MyCommentsList";
 
 export const metadata = { title: "I tuoi commenti — SAM" };
@@ -31,7 +32,7 @@ export default async function MyCommentsPage() {
     return {
       ...c,
       spaceName: space?.name,
-      spaceHref: space && (space.type === "Coworking" ? `/work/spaces/${space.id}` : `/spaces/${space.id}`),
+      spaceHref: space && (isStudySpace(space) ? `/spaces/${space.id}` : `/work/spaces/${space.id}`),
     };
   });
 

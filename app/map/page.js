@@ -1,4 +1,4 @@
-import { getSpaces } from "@/lib/notion";
+import { getStudySpaces } from "@/lib/notion";
 import MapView from "@/components/map/MapView";
 
 export const metadata = {
@@ -7,8 +7,8 @@ export const metadata = {
 };
 
 export default async function MapPage() {
-  // SAM esclude i coworking (sono in SAM for Work).
-  const spaces = (await getSpaces()).filter((s) => s.type !== "Coworking");
+  // SAM esclude i coworking puri (sono in SAM for Work).
+  const spaces = await getStudySpaces();
   const withCoords = spaces.filter((s) => s.lat != null && s.lng != null);
 
   return (

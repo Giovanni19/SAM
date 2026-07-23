@@ -53,6 +53,7 @@ function deriveZoneFromAddress(address) {
 
 const getText = (p) => p?.title?.[0]?.plain_text || p?.rich_text?.[0]?.plain_text || "";
 const getSelect = (p) => p?.select?.name || "";
+const getMultiSelect = (p) => p?.multi_select?.map((o) => o.name) || [];
 const getNumber = (p) => (typeof p?.number === "number" ? p.number : null);
 const getUrl = (p) => p?.url || "";
 const getPhone = (p) => p?.phone_number || "";
@@ -85,7 +86,8 @@ function normalizeSpace(page) {
   const p = page.properties || {};
   const address = getText(p["Indirizzo"]);
   const zone = getSelect(p["Zona"]) || deriveZoneFromAddress(address);
-  const categoria = getSelect(p["Categoria"]);
+  const categorie = getMultiSelect(p["Categoria"]);
+  const types = [...new Set(categorie.map((c) => CATEGORY_TO_TYPE[c] || "Altro"))];
   const description = getText(p["Descrizione IT"]) || italianPart(getText(p["Descrizione"]));
 
   return {
@@ -93,12 +95,13 @@ function normalizeSpace(page) {
     name: getText(p["Nome"]),
     address,
     zone,
-    type: CATEGORY_TO_TYPE[categoria] || "Altro",
+    types: types.length ? types : ["Altro"],
     wifi: getSelect(p["WiFi"]) || null,
     prese: getSelect(p["Prese"]) || null,
     sedute: getSelect(p["Sedute"]) || null,
     rumore: getSelect(p["Rumore"]) || null,
     stayPolicy: getSelect(p["Stay Policy"]) || null,
+    ac: getSelect(p["Aria Condizionata"]) || null,
     lat: getNumber(p["Latitude"]),
     lng: getNumber(p["Longitude"]),
     description,
@@ -132,7 +135,7 @@ const spaces = pages
   .sort((a, b) => a.name.localeCompare(b.name, "it"));
 
 const byType = {};
-for (const s of spaces) byType[s.type] = (byType[s.type] || 0) + 1;
+for (const s of spaces) for (const t of s.types) byType[t] = (byType[t] || 0) + 1;
 
 const today = new Date().toISOString().slice(0, 10);
 const header = `// Snapshot REALE del database Notion "Places" (SAM — Study Areas Milano).

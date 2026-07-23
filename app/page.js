@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { getSpaces } from "@/lib/notion";
+import { getStudySpaces } from "@/lib/notion";
 import { getZones } from "@/lib/utils";
 import SpaceList from "@/components/SpaceList";
 
 export default async function HomePage() {
-  // La home di SAM esclude i coworking (che vivono in SAM for Work).
-  const spaces = (await getSpaces()).filter((s) => s.type !== "Coworking");
+  // La home di SAM esclude i coworking "puri" (che vivono in SAM for Work).
+  const spaces = await getStudySpaces();
   const zones = getZones(spaces);
   const featured = spaces.slice(0, 6);
 
