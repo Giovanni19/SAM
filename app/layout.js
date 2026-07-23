@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import FavoritesProvider from "@/components/FavoritesProvider";
 import AuthPromptProvider from "@/components/AuthPrompt";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
+import { STORAGE_KEY as CONSENT_STORAGE_KEY } from "@/lib/consent";
 
 const GTM_ID = "GTM-5FKRTS5L";
 
@@ -47,19 +48,26 @@ export default function RootLayout({ children }) {
   return (
     <html lang="it" className={`${poppins.variable} ${nunito.variable}`}>
       <body className="flex min-h-dvh flex-col">
-        {/* Consent Mode v2: tutti i segnali partono 'denied'. GTM (sotto) legge
-            questo stato subito dopo l'init, quindi nessun tag di analytics/
-            marketing può scattare finché l'utente non accetta dal banner.
-            strategy="beforeInteractive" fa iniettare entrambi da Next.js in
-            <head>, in ordine, prima che la pagina diventi interattiva. */}
+        {/* Consent Mode v2: il default riflette subito la scelta già salvata
+            (se presente) leggendola in modo sincrono da localStorage, invece
+            di aspettare che il componente React si idrati. Prima leggevamo la
+            scelta salvata solo nell'useEffect di CookieConsentBanner: se
+            l'idratazione superava i 500ms di wait_for_update, il primo
+            page_view partiva comunque con analytics_storage 'denied' anche
+            per chi aveva già accettato. strategy="beforeInteractive" fa
+            iniettare questo script e GTM da Next.js in <head>, in ordine,
+            prima che la pagina diventi interattiva. */}
         <Script id="consent-default" strategy="beforeInteractive">
           {`window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
+var storedConsent = null;
+try { storedConsent = window.localStorage.getItem('${CONSENT_STORAGE_KEY}'); } catch (e) {}
+var consentStatus = (storedConsent === 'granted' || storedConsent === 'denied') ? storedConsent : 'denied';
 gtag('consent', 'default', {
-  'ad_storage': 'denied',
-  'ad_user_data': 'denied',
-  'ad_personalization': 'denied',
-  'analytics_storage': 'denied',
+  'ad_storage': consentStatus,
+  'ad_user_data': consentStatus,
+  'ad_personalization': consentStatus,
+  'analytics_storage': consentStatus,
   'wait_for_update': 500
 });`}
         </Script>
