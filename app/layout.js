@@ -25,11 +25,30 @@ const nunito = Nunito({
   display: "swap",
 });
 
+const SITE_TITLE = "SAM — Study Areas Milan";
+const SITE_DESCRIPTION =
+  "Trova i migliori spazi studio, caffetterie, biblioteche e coworking a Milano dove studiare e lavorare.";
+
 export const metadata = {
   metadataBase: new URL("https://www.studyareasmilan.it"),
-  title: "SAM — Study Areas Milan",
-  description:
-    "Trova i migliori spazi studio, caffetterie, biblioteche e coworking a Milano dove studiare e lavorare.",
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  // Default per tutte le pagine; le pagine spazio (SpaceDetail) sovrascrivono
+  // con la propria foto/descrizione in generateMetadata. L'immagine di default
+  // arriva da app/opengraph-image.js (convenzione Next.js, generata via ImageResponse).
+  openGraph: {
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: "/",
+    siteName: "SAM — Study Areas Milan",
+    locale: "it_IT",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
 };
 
 // Ottimizzazione per dispositivo (telefono / iPad / desktop):

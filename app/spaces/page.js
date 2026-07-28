@@ -4,6 +4,8 @@ import { TYPE_META } from "@/lib/utils";
 
 export const metadata = {
   title: "Tutti gli spazi — SAM",
+  description:
+    "Tutte le caffetterie, biblioteche e librerie di Milano dove studiare, con WiFi, prese e rumore verificati.",
 };
 
 export default async function SpacesPage({ searchParams }) {

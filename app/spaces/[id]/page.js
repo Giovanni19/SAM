@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getSpaceById, getSpaces } from "@/lib/notion";
-import { isStudySpace, displayType } from "@/lib/utils";
+import { isStudySpace, displayType, spaceMetaDescription } from "@/lib/utils";
 import SpaceDetail from "@/components/SpaceDetail";
 
 export async function generateStaticParams() {
@@ -11,7 +11,31 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }) {
   const space = await getSpaceById(params.id);
-  return { title: space ? `${space.name} — SAM` : "Spazio non trovato — SAM" };
+  if (!space) return { title: "Spazio non trovato — SAM" };
+
+  const title = `${space.name} — SAM`;
+  const description = spaceMetaDescription(space);
+
+  return {
+    title,
+    description,
+    alternates: { canonical: `/spaces/${space.id}` },
+    openGraph: {
+      title,
+      description,
+      url: `/spaces/${space.id}`,
+      type: "website",
+      // Next.js non eredita l'opengraph-image.js del layout quando la pagina
+      // definisce il proprio `openGraph`: serve un fallback esplicito.
+      images: [space.image || "/opengraph-image"],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [space.image || "/opengraph-image"],
+    },
+  };
 }
 
 export default async function SpaceDetailPage({ params }) {

@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getSpaceById, getSpaces } from "@/lib/notion";
-import { isCoworking, displayType } from "@/lib/utils";
+import { isCoworking, displayType, spaceMetaDescription } from "@/lib/utils";
 import SpaceDetail from "@/components/SpaceDetail";
 
 export async function generateStaticParams() {
@@ -11,7 +11,31 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }) {
   const space = await getSpaceById(params.id);
-  return { title: space ? `${space.name} — SAM for Work` : "Coworking non trovato — SAM for Work" };
+  if (!space) return { title: "Coworking non trovato — SAM for Work" };
+
+  const title = `${space.name} — SAM for Work`;
+  const description = spaceMetaDescription({ ...space, type: "Coworking" });
+
+  return {
+    title,
+    description,
+    alternates: { canonical: `/work/spaces/${space.id}` },
+    openGraph: {
+      title,
+      description,
+      url: `/work/spaces/${space.id}`,
+      type: "website",
+      // Next.js non eredita l'opengraph-image.js del layout quando la pagina
+      // definisce il proprio `openGraph`: serve un fallback esplicito.
+      images: [space.image || "/opengraph-image"],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [space.image || "/opengraph-image"],
+    },
+  };
 }
 
 export default async function WorkSpaceDetailPage({ params }) {

@@ -3,6 +3,8 @@ import SpacesExplorer from "@/components/SpacesExplorer";
 
 export const metadata = {
   title: "Tutti i coworking — SAM for Work",
+  description:
+    "Tutti gli spazi di coworking di Milano con day pass, WiFi veloce e sale riunioni, selezionati da SAM for Work.",
 };
 
 export default async function WorkSpacesPage() {

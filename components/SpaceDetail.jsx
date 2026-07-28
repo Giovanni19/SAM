@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { typeMeta, getAmenities } from "@/lib/utils";
+import { typeMeta, getAmenities, spaceJsonLd } from "@/lib/utils";
 import FavoriteButton from "@/components/FavoriteButton";
 import PopularTimesChart from "@/components/PopularTimesChart";
 import OpenNowBadge from "@/components/OpenNowBadge";
 import Comments from "@/components/Comments";
+
+const BASE_URL = "https://www.studyareasmilan.it";
 
 const DAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const DAY_LABEL = { mon: "Lun", tue: "Mar", wed: "Mer", thu: "Gio", fri: "Ven", sat: "Sab", sun: "Dom" };
@@ -26,8 +28,18 @@ export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "
       space.address || space.name
     )}`;
 
+  // JSON-LD (dati strutturati Schema.org per i motori di ricerca). Il `<` è
+  // escapato per sicurezza: rompe un eventuale "</script>" nascosto nei testi.
+  const jsonLd = spaceJsonLd(space, `${BASE_URL}${backHref}/${space.id}`);
+  const jsonLdHtml = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
+
   return (
     <div className="container-sam py-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml }}
+      />
+
       <Link href={backHref} className="text-sm font-semibold text-sam-green hover:underline">
         {backLabel}
       </Link>
