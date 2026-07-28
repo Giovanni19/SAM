@@ -111,7 +111,10 @@ export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "
 
       <div className="mt-8 grid gap-8 lg:grid-cols-3">
         {/* Colonna principale */}
-        <div className="lg:col-span-2">
+        {/* order-2/order-1: su mobile (una sola colonna) le Informazioni
+            (orari, telefono, prenota) vengono prima dei commenti; da lg in su
+            torna il layout a due colonne col ordine naturale del DOM. */}
+        <div className="order-2 lg:order-1 lg:col-span-2">
           {space.description && (
             <>
               <h2 className="font-display text-xl font-bold text-sam-green">Descrizione</h2>
@@ -158,7 +161,7 @@ export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "
         </div>
 
         {/* Sidebar */}
-        <aside className="space-y-4">
+        <aside className="order-1 space-y-4 lg:order-2">
           <div className="rounded-2xl border border-sam-cream bg-white p-5">
             <h3 className="font-display font-semibold text-sam-green">Informazioni</h3>
             <dl className="mt-3 space-y-3 text-sm">
