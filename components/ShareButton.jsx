@@ -38,7 +38,7 @@ export default function ShareButton({ url, title, text, className, size = "md" }
   }
 
   return (
-    <span className="relative inline-flex">
+    <>
       <button
         type="button"
         aria-label="Condividi"
@@ -64,16 +64,24 @@ export default function ShareButton({ url, title, text, className, size = "md" }
           <path d="M5 12v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" />
         </svg>
       </button>
+
+      {/* Toast fisso in basso, centrato sullo schermo: non è ancorato al
+          bottone (che può stare vicino al bordo destro/sinistro), così non
+          rischia mai di finire tagliato fuori dallo schermo su mobile. */}
       {status === "copied" && (
-        <span className="absolute -bottom-8 right-0 whitespace-nowrap rounded-full bg-sam-green px-3 py-1 text-xs font-semibold text-sam-paper shadow-card">
-          Link copiato!
-        </span>
+        <div className="fixed inset-x-4 bottom-24 z-50 flex justify-center">
+          <span className="rounded-full bg-sam-green px-4 py-2 text-sm font-semibold text-sam-paper shadow-card">
+            Link copiato!
+          </span>
+        </div>
       )}
       {status === "error" && (
-        <span className="absolute -bottom-8 right-0 max-w-[14rem] whitespace-normal break-all rounded-xl bg-sam-brown px-3 py-1.5 text-xs font-medium text-sam-paper shadow-card">
-          Copia il link a mano: {url}
-        </span>
+        <div className="fixed inset-x-4 bottom-24 z-50 flex justify-center">
+          <span className="max-w-sm break-all rounded-xl bg-sam-brown px-4 py-2 text-sm font-medium text-sam-paper shadow-card">
+            Copia il link a mano: {url}
+          </span>
+        </div>
       )}
-    </span>
+    </>
   );
 }
