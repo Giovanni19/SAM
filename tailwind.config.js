@@ -3,6 +3,11 @@ module.exports = {
   content: [
     "./app/**/*.{js,jsx}",
     "./components/**/*.{js,jsx}",
+    // lib/utils.js referenzia classi colore (TYPE_META) dinamicamente: senza
+    // questo path Tailwind non le vede mai e non genera il CSS (bug scoperto
+    // con "bg-sam-orange" per Caffetteria, invisibile finché non era usato
+    // anche altrove come classe statica).
+    "./lib/**/*.js",
   ],
   theme: {
     extend: {
