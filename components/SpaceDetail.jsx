@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { typeMeta, getAmenities, spaceJsonLd } from "@/lib/utils";
 import FavoriteButton from "@/components/FavoriteButton";
+import ShareButton from "@/components/ShareButton";
 import PopularTimesChart from "@/components/PopularTimesChart";
 import OpenNowBadge from "@/components/OpenNowBadge";
 import Comments from "@/components/Comments";
@@ -28,9 +29,11 @@ export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "
       space.address || space.name
     )}`;
 
+  const canonicalUrl = `${BASE_URL}${backHref}/${space.id}`;
+
   // JSON-LD (dati strutturati Schema.org per i motori di ricerca). Il `<` è
   // escapato per sicurezza: rompe un eventuale "</script>" nascosto nei testi.
-  const jsonLd = spaceJsonLd(space, `${BASE_URL}${backHref}/${space.id}`);
+  const jsonLd = spaceJsonLd(space, canonicalUrl);
   const jsonLdHtml = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
 
   return (
@@ -80,7 +83,8 @@ export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <ShareButton url={canonicalUrl} title={space.name} text={space.description} />
           <FavoriteButton spaceId={space.id} />
         </div>
       </div>
