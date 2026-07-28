@@ -49,7 +49,20 @@ export default function ShareButton({ url, title, text, className, size = "md" }
           className
         )}
       >
-        <span className="text-sam-muted">🔗</span>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-[45%] w-[45%] text-sam-muted"
+        >
+          {/* Icona "condividi" in stile iOS (square.and.arrow.up): freccia in alto + tray aperto sotto. */}
+          <path d="M8 7l4-4 4 4" />
+          <path d="M12 3v12" />
+          <path d="M5 12v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" />
+        </svg>
       </button>
       {status === "copied" && (
         <span className="absolute -bottom-8 right-0 whitespace-nowrap rounded-full bg-sam-green px-3 py-1 text-xs font-semibold text-sam-paper shadow-card">
