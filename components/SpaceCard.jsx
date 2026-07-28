@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import FavoriteButton from "./FavoriteButton";
 import OpenNowBadge from "./OpenNowBadge";
 import { typeMeta, getAmenities } from "@/lib/utils";
+import { useI18n } from "@/components/I18nProvider";
 
 const TONE_DOT = {
   good: "text-sam-green",
@@ -10,12 +13,13 @@ const TONE_DOT = {
 };
 
 export default function SpaceCard({ space, basePath = "/spaces" }) {
-  const meta = typeMeta(space.type);
-  const amenities = getAmenities(space).slice(0, 4);
+  const { t, href } = useI18n();
+  const meta = typeMeta(space.type, t);
+  const amenities = getAmenities(space, t).slice(0, 4);
 
   return (
     <Link
-      href={`${basePath}/${space.id}`}
+      href={href(`${basePath}/${space.id}`)}
       className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-card transition hover:-translate-y-1 hover:shadow-card-hover"
     >
       {/* Foto se presente, altrimenti header colorato con emoji */}
@@ -36,7 +40,7 @@ export default function SpaceCard({ space, basePath = "/spaces" }) {
         {space.rating != null && (
           <span
             className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-sam-paper/95 px-2.5 py-1 text-xs font-bold text-sam-green"
-            title="Valutazione Google Maps"
+            title={t.map.ratingTitle}
           >
             ★ {space.rating}
             {space.reviewsCount != null && (

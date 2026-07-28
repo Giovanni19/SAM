@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useI18n } from "@/components/I18nProvider";
 
 // Iniziali dell'utente: nome + cognome (es. "Mario Rossi" → "MR").
 // Con un solo nome usa una sola iniziale; senza nome ripiega sull'email.
@@ -20,6 +21,7 @@ function getInitials(fullName, email) {
 // Mostra "Accedi" oppure l'avatar con menu (account / logout). Lato client,
 // così le pagine di contenuto restano statiche.
 export default function AuthNav() {
+  const { t, href } = useI18n();
   const [user, setUser] = useState(null);
   const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(false);
@@ -55,7 +57,7 @@ export default function AuthNav() {
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
-    window.location.assign("/");
+    window.location.assign(href("/"));
   }
 
   if (!ready) return <span className="h-9 w-9" aria-hidden />; // placeholder, niente flicker
@@ -69,7 +71,7 @@ export default function AuthNav() {
           onClick={() => setOpen((v) => !v)}
           aria-haspopup="menu"
           aria-expanded={open}
-          title="Il tuo account"
+          title={t.nav.account}
           className="flex h-9 w-9 items-center justify-center rounded-full bg-sam-green font-display text-sm font-bold text-sam-paper transition hover:bg-sam-green-dark"
         >
           {initials}
@@ -81,12 +83,12 @@ export default function AuthNav() {
             className="absolute right-0 z-50 mt-2 w-44 overflow-hidden rounded-xl border border-sam-cream bg-white py-1 shadow-card"
           >
             <Link
-              href="/account"
+              href={href("/account")}
               role="menuitem"
               onClick={() => setOpen(false)}
               className="block px-4 py-2 text-sm font-semibold text-sam-brown transition hover:bg-sam-cream"
             >
-              Il tuo account
+              {t.nav.account}
             </Link>
             <button
               type="button"
@@ -94,7 +96,7 @@ export default function AuthNav() {
               onClick={handleLogout}
               className="block w-full px-4 py-2 text-left text-sm font-semibold text-sam-coral transition hover:bg-sam-cream"
             >
-              Esci
+              {t.nav.logout}
             </button>
           </div>
         )}
@@ -104,10 +106,10 @@ export default function AuthNav() {
 
   return (
     <Link
-      href="/login"
+      href={href("/login")}
       className="rounded-full px-3 py-2 text-sm font-semibold text-sam-brown transition hover:bg-sam-cream"
     >
-      Accedi
+      {t.nav.login}
     </Link>
   );
 }

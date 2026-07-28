@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import Link from "next/link";
+import { useI18n } from "@/components/I18nProvider";
 
 // Modal globale "Accedi o registrati…": qualunque componente può mostrarlo
 // chiamando useAuthPrompt().show("messaggio"). Compare al centro, sopra un
@@ -14,6 +15,7 @@ export function useAuthPrompt() {
 }
 
 export default function AuthPromptProvider({ children }) {
+  const { t, href } = useI18n();
   const [message, setMessage] = useState(null);
 
   const show = useCallback((msg) => setMessage(msg), []);
@@ -48,7 +50,7 @@ export default function AuthPromptProvider({ children }) {
             <button
               type="button"
               onClick={close}
-              aria-label="Chiudi"
+              aria-label={t.authPrompt.close}
               className="absolute right-3 top-3 rounded-full px-2 py-1 text-sam-muted hover:bg-sam-cream"
             >
               ✕
@@ -61,18 +63,18 @@ export default function AuthPromptProvider({ children }) {
 
             <div className="mt-1 flex gap-3">
               <Link
-                href="/login"
+                href={href("/login")}
                 onClick={close}
                 className="btn-primary"
               >
-                Accedi
+                {t.nav.login}
               </Link>
               <Link
-                href="/signup"
+                href={href("/signup")}
                 onClick={close}
                 className="btn-outline"
               >
-                Registrati
+                {t.nav.signup}
               </Link>
             </div>
           </div>

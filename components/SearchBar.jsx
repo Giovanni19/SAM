@@ -1,6 +1,7 @@
 "use client";
 
-import { AMENITY_FILTERS } from "@/lib/utils";
+import { amenityFilters } from "@/lib/utils";
+import { useI18n } from "@/components/I18nProvider";
 
 // Controllo di ricerca: Zona + Tipo, più i filtri per amenità (WiFi, Prese,
 // Sedute, Rumore, Permanenza) così l'utente può restringere la ricerca a
@@ -28,6 +29,8 @@ export default function SearchBar({
   openNow = false,
   onOpenNowChange,
 }) {
+  const { t } = useI18n();
+
   return (
     <form
       onSubmit={(e) => {
@@ -38,21 +41,21 @@ export default function SearchBar({
     >
       {/* Ricerca per nome (fuzzy, tollera i refusi) — filtra mentre scrivi */}
       <label className="mb-3 block">
-        <span className="mb-1 block text-xs font-semibold text-sam-green">Cerca un posto</span>
+        <span className="mb-1 block text-xs font-semibold text-sam-green">{t.search.queryLabel}</span>
         <input
           type="search"
           value={query}
           onChange={(e) => onQueryChange?.(e.target.value)}
-          placeholder="Nome del posto (es. Biblioteca Sormani)…"
+          placeholder={t.search.queryPlaceholder}
           className={selectClass}
         />
       </label>
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <label className="flex-1">
-          <span className="mb-1 block text-xs font-semibold text-sam-green">Zona</span>
+          <span className="mb-1 block text-xs font-semibold text-sam-green">{t.search.zone}</span>
           <select value={zone} onChange={(e) => onZoneChange?.(e.target.value)} className={selectClass}>
-            <option value="">Tutte le zone</option>
+            <option value="">{t.search.allZones}</option>
             {zones.map((z) => (
               <option key={z} value={z}>{z}</option>
             ))}
@@ -61,11 +64,12 @@ export default function SearchBar({
 
         {!hideType && (
           <label className="flex-1">
-            <span className="mb-1 block text-xs font-semibold text-sam-green">Tipo di spazio</span>
+            <span className="mb-1 block text-xs font-semibold text-sam-green">{t.search.type}</span>
             <select value={type} onChange={(e) => onTypeChange?.(e.target.value)} className={selectClass}>
-              <option value="">Tutti i tipi</option>
-              {types.map((t) => (
-                <option key={t} value={t}>{t}</option>
+              <option value="">{t.search.allTypes}</option>
+              {/* value = tipo canonico (italiano), etichetta tradotta */}
+              {types.map((type) => (
+                <option key={type} value={type}>{t.types[type] ?? type}</option>
               ))}
             </select>
           </label>
@@ -74,7 +78,7 @@ export default function SearchBar({
 
       {/* Filtri per amenità: personalizza in base a cosa ti serve davvero */}
       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        {AMENITY_FILTERS.map(({ key, label, map }) => (
+        {amenityFilters(t).map(({ key, label, options }) => (
           <label key={key}>
             <span className="mb-1 block text-xs font-semibold text-sam-green">{label}</span>
             <select
@@ -82,9 +86,9 @@ export default function SearchBar({
               onChange={(e) => onFilterChange?.(key, e.target.value)}
               className={selectClass}
             >
-              <option value="">Indifferente</option>
-              {Object.entries(map).map(([value, meta]) => (
-                <option key={value} value={value}>{meta.label}</option>
+              <option value="">{t.search.any}</option>
+              {options.map(([value, optionLabel]) => (
+                <option key={value} value={value}>{optionLabel}</option>
               ))}
             </select>
           </label>
@@ -93,11 +97,11 @@ export default function SearchBar({
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button type="submit" className="btn-primary">
-          🔍 Cerca
+          {t.search.submit}
         </button>
         {canReset && (
           <button type="button" onClick={onReset} className="btn-outline">
-            Reset
+            {t.search.reset}
           </button>
         )}
         <label className="ml-auto inline-flex cursor-pointer items-center gap-2 text-sm font-semibold text-sam-brown">
@@ -107,7 +111,7 @@ export default function SearchBar({
             onChange={(e) => onOpenNowChange?.(e.target.checked)}
             className="h-4 w-4 accent-sam-green"
           />
-          Aperti adesso
+          {t.search.openNow}
         </label>
       </div>
     </form>

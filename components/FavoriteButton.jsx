@@ -3,8 +3,10 @@
 import { useFavorites } from "@/lib/useFavorites";
 import { useAuthPrompt } from "@/components/AuthPrompt";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/components/I18nProvider";
 
 export default function FavoriteButton({ spaceId, className, size = "md" }) {
+  const { t } = useI18n();
   const { isFavorite, toggle, ready, isLoggedIn } = useFavorites();
   const { show } = useAuthPrompt();
   const active = ready && isFavorite(spaceId);
@@ -17,7 +19,7 @@ export default function FavoriteButton({ spaceId, className, size = "md" }) {
   return (
     <button
       type="button"
-      aria-label={active ? "Rimuovi dai preferiti" : "Aggiungi ai preferiti"}
+      aria-label={active ? t.detail.removeFavorite : t.detail.addFavorite}
       aria-pressed={active}
       onClick={(e) => {
         e.preventDefault();
@@ -25,7 +27,7 @@ export default function FavoriteButton({ spaceId, className, size = "md" }) {
         // I preferiti si salvano solo con un account: se non sei loggato,
         // mostra il banner di invito ad accedere invece di salvare.
         if (!isLoggedIn) {
-          show("Accedi o registrati per salvarlo nei tuoi preferiti");
+          show(t.authPrompt.favorite);
           return;
         }
         toggle(spaceId);

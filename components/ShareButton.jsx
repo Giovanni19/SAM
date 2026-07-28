@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/components/I18nProvider";
 
 // Su mobile usa la scheda di condivisione nativa (Web Share API); altrove
 // copia il link negli appunti e mostra una conferma temporanea.
 export default function ShareButton({ url, title, text, className, size = "md" }) {
+  const { t } = useI18n();
   const [status, setStatus] = useState(null); // null | "copied" | "error"
 
   const sizes = {
@@ -41,7 +43,7 @@ export default function ShareButton({ url, title, text, className, size = "md" }
     <>
       <button
         type="button"
-        aria-label="Condividi"
+        aria-label={t.detail.share}
         onClick={handleShare}
         className={cn(
           "flex items-center justify-center rounded-full bg-sam-paper/90 shadow-card backdrop-blur transition hover:scale-110 active:scale-95",
@@ -71,14 +73,14 @@ export default function ShareButton({ url, title, text, className, size = "md" }
       {status === "copied" && (
         <div className="fixed inset-x-4 bottom-24 z-50 flex justify-center">
           <span className="rounded-full bg-sam-green px-4 py-2 text-sm font-semibold text-sam-paper shadow-card">
-            Link copiato!
+            {t.detail.linkCopied}
           </span>
         </div>
       )}
       {status === "error" && (
         <div className="fixed inset-x-4 bottom-24 z-50 flex justify-center">
           <span className="max-w-sm break-all rounded-xl bg-sam-brown px-4 py-2 text-sm font-medium text-sam-paper shadow-card">
-            Copia il link a mano: {url}
+            {t.detail.copyManually} {url}
           </span>
         </div>
       )}

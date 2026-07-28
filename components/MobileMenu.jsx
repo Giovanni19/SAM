@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useI18n } from "@/components/I18nProvider";
+import { stripLocale } from "@/lib/i18n";
 
 // Menu a comparsa per schermi piccoli: raccoglie navigazione + auth dietro un
 // pulsante hamburger, così l'header non si affolla sul telefono.
@@ -12,7 +14,8 @@ export default function MobileMenu() {
   const [user, setUser] = useState(null);
   const ref = useRef(null);
 
-  const pathname = usePathname() || "/";
+  const { t, href } = useI18n();
+  const pathname = stripLocale(usePathname() || "/");
   const isWork = pathname === "/work" || pathname.startsWith("/work/");
   const prefix = isWork ? "/work" : "";
 
@@ -40,7 +43,7 @@ export default function MobileMenu() {
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
-    window.location.assign("/");
+    window.location.assign(href("/"));
   }
 
   const linkClass =
@@ -51,7 +54,7 @@ export default function MobileMenu() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label="Menu"
+        aria-label={t.nav.menu}
         aria-expanded={open}
         className="flex h-10 w-10 items-center justify-center rounded-full text-sam-green transition hover:bg-sam-cream"
       >
@@ -73,30 +76,30 @@ export default function MobileMenu() {
 
       {open && (
         <div className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-xl border border-sam-cream bg-white p-1 shadow-card">
-          <Link href={`${prefix}/spaces`} onClick={() => setOpen(false)} className={linkClass}>
-            Spazi
+          <Link href={href(`${prefix}/spaces`)} onClick={() => setOpen(false)} className={linkClass}>
+            {t.nav.spaces}
           </Link>
-          <Link href={`${prefix}/map`} onClick={() => setOpen(false)} className={linkClass}>
-            Mappa
+          <Link href={href(`${prefix}/map`)} onClick={() => setOpen(false)} className={linkClass}>
+            {t.nav.map}
           </Link>
-          <Link href={`${prefix}/favorites`} onClick={() => setOpen(false)} className={linkClass}>
-            ♥ Preferiti
+          <Link href={href(`${prefix}/favorites`)} onClick={() => setOpen(false)} className={linkClass}>
+            {t.nav.favorites}
           </Link>
 
           <div className="my-1 border-t border-sam-cream" />
 
           {user ? (
             <>
-              <Link href="/account" onClick={() => setOpen(false)} className={linkClass}>
-                Il tuo account
+              <Link href={href("/account")} onClick={() => setOpen(false)} className={linkClass}>
+                {t.nav.account}
               </Link>
               <button type="button" onClick={handleLogout} className={`${linkClass} w-full text-left text-sam-coral`}>
-                Esci
+                {t.nav.logout}
               </button>
             </>
           ) : (
-            <Link href="/login" onClick={() => setOpen(false)} className={linkClass}>
-              Accedi
+            <Link href={href("/login")} onClick={() => setOpen(false)} className={linkClass}>
+              {t.nav.login}
             </Link>
           )}
         </div>

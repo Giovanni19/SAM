@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useI18n } from "@/components/I18nProvider";
+import { stripLocale } from "@/lib/i18n";
 
 // Footer speculare per le due sezioni. In SAM for Work la classe .theme-work
 // trasforma lo sfondo verde in bordeaux (vedi globals.css) e i link puntano a
 // /work/*; il logo diventa la valigetta.
 export default function Footer() {
-  const pathname = usePathname() || "/";
+  const { t, href } = useI18n();
+  const pathname = stripLocale(usePathname() || "/");
   const isWork = pathname === "/work" || pathname.startsWith("/work/");
   const prefix = isWork ? "/work" : "";
 
@@ -29,51 +32,49 @@ export default function Footer() {
                 <img src="/brand/sam-icon.svg" alt="SAM" className="h-14 w-14" />
               )}
             </span>
-            <span className="font-display text-xl font-bold">{isWork ? "SAM for Work" : "SAM"}</span>
+            <span className="font-display text-xl font-bold">{isWork ? t.brand.work : t.brand.sam}</span>
           </div>
           <p className="mt-3 max-w-xs text-sm text-sam-paper/70">
-            {isWork
-              ? "SAM for Work — i coworking di Milano per lavorare e per i team commerciali."
-              : "Study Areas Milan — trova il posto giusto per studiare in città."}
+            {isWork ? t.footer.taglineWork : t.footer.taglineSam}
           </p>
         </div>
 
         <div>
-          <h4 className="font-display text-sm font-semibold text-sam-paper">Esplora</h4>
+          <h4 className="font-display text-sm font-semibold text-sam-paper">{t.footer.explore}</h4>
           <ul className="mt-3 space-y-2 text-sm text-sam-paper/70">
-            <li><Link href={`${prefix}/spaces`} className="hover:text-sam-paper">{isWork ? "Tutti i coworking" : "Tutti gli spazi"}</Link></li>
-            <li><Link href={`${prefix}/map`} className="hover:text-sam-paper">Mappa</Link></li>
-            <li><Link href={`${prefix}/favorites`} className="hover:text-sam-paper">Preferiti</Link></li>
+            <li><Link href={href(`${prefix}/spaces`)} className="hover:text-sam-paper">{isWork ? t.footer.allCoworking : t.footer.allSpaces}</Link></li>
+            <li><Link href={href(`${prefix}/map`)} className="hover:text-sam-paper">{t.footer.map}</Link></li>
+            <li><Link href={href(`${prefix}/favorites`)} className="hover:text-sam-paper">{t.footer.favorites}</Link></li>
           </ul>
         </div>
 
         {isWork ? (
           <div>
-            <h4 className="font-display text-sm font-semibold text-sam-paper">Cerchi altro?</h4>
+            <h4 className="font-display text-sm font-semibold text-sam-paper">{t.footer.lookingElse}</h4>
             <ul className="mt-3 space-y-2 text-sm text-sam-paper/70">
-              <li><Link href="/" className="hover:text-sam-paper">📚 Vai a SAM (studio)</Link></li>
+              <li><Link href={href("/")} className="hover:text-sam-paper">{t.footer.samLink}</Link></li>
             </ul>
           </div>
         ) : (
           <div>
-            <h4 className="font-display text-sm font-semibold text-sam-paper">Tipi</h4>
+            <h4 className="font-display text-sm font-semibold text-sam-paper">{t.footer.types}</h4>
             <ul className="mt-3 space-y-2 text-sm text-sam-paper/70">
               {/* Il valore di ?type= deve combaciare con lo `type` degli spazi. */}
-              <li><Link href="/spaces?type=Caffetteria" className="hover:text-sam-paper">Caffetterie</Link></li>
-              <li><Link href="/spaces?type=Biblioteca" className="hover:text-sam-paper">Biblioteche</Link></li>
-              <li><Link href="/spaces?type=Libreria" className="hover:text-sam-paper">Librerie</Link></li>
-              <li><Link href="/work" className="hover:text-sam-paper">💼 Coworking → SAM for Work</Link></li>
+              <li><Link href={href("/spaces?type=Caffetteria")} className="hover:text-sam-paper">{t.footer.cafes}</Link></li>
+              <li><Link href={href("/spaces?type=Biblioteca")} className="hover:text-sam-paper">{t.footer.libraries}</Link></li>
+              <li><Link href={href("/spaces?type=Libreria")} className="hover:text-sam-paper">{t.footer.bookshops}</Link></li>
+              <li><Link href={href("/work")} className="hover:text-sam-paper">{t.footer.coworkingLink}</Link></li>
             </ul>
           </div>
         )}
 
         <div>
-          <h4 className="font-display text-sm font-semibold text-sam-paper">Contatti & Legale</h4>
+          <h4 className="font-display text-sm font-semibold text-sam-paper">{t.footer.contact}</h4>
           <ul className="mt-3 space-y-2 text-sm text-sam-paper/70">
             <li><a href="mailto:info@studyareasmilan.it" className="hover:text-sam-paper">info@studyareasmilan.it</a></li>
-            <li>Milano, Italia</li>
-            <li><Link href="/privacy" className="hover:text-sam-paper">Informativa privacy</Link></li>
-            <li><Link href="/cookie" className="hover:text-sam-paper">Cookie policy</Link></li>
+            <li>{t.footer.city}</li>
+            <li><Link href={href("/privacy")} className="hover:text-sam-paper">{t.footer.privacy}</Link></li>
+            <li><Link href={href("/cookie")} className="hover:text-sam-paper">{t.footer.cookie}</Link></li>
           </ul>
         </div>
       </div>
@@ -82,9 +83,9 @@ export default function Footer() {
         <div className="container-sam flex flex-col items-center justify-between gap-2 text-xs text-sam-paper/50 sm:flex-row">
           <span>© {new Date().getFullYear()} SAM — Study Areas Milan</span>
           <div className="flex items-center gap-3">
-            <Link href="/privacy" className="hover:text-sam-paper/80">Privacy</Link>
-            <Link href="/cookie" className="hover:text-sam-paper/80">Cookie</Link>
-            <span>Fatto con ♥ a Milano</span>
+            <Link href={href("/privacy")} className="hover:text-sam-paper/80">{t.footer.privacyShort}</Link>
+            <Link href={href("/cookie")} className="hover:text-sam-paper/80">{t.footer.cookieShort}</Link>
+            <span>{t.footer.madeWith}</span>
           </div>
         </div>
       </div>

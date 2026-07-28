@@ -4,14 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import SearchBar from "./SearchBar";
 import SpaceList from "./SpaceList";
 import { useFavorites } from "@/lib/useFavorites";
+import { useI18n } from "@/components/I18nProvider";
 import { useAuthPrompt } from "@/components/AuthPrompt";
-import { getZones, getTypes, AMENITY_FILTERS, fuzzyFilter, isOpenNow } from "@/lib/utils";
+import { getZones, getTypes, AMENITY_KEYS, fuzzyFilter, isOpenNow } from "@/lib/utils";
 
-const EMPTY_AMENITY_FILTERS = Object.fromEntries(AMENITY_FILTERS.map((f) => [f.key, ""]));
+const EMPTY_AMENITY_FILTERS = Object.fromEntries(AMENITY_KEYS.map((k) => [k, ""]));
 
 // True se sono stati scelti dei filtri (Zona / Tipo / amenità) da applicare.
 function hasChosenFilters(zone, type, filters) {
-  return Boolean(zone || type || AMENITY_FILTERS.some(({ key }) => filters[key]));
+  return Boolean(zone || type || AMENITY_KEYS.some((key) => filters[key]));
 }
 
 /**
@@ -20,6 +21,7 @@ function hasChosenFilters(zone, type, filters) {
  *  - Zona / Tipo / amenità: si applicano al click su "Cerca"
  */
 export default function SpacesExplorer({ spaces = [], initialType = "", hideType = false, basePath = "/spaces" }) {
+  const { t } = useI18n();
   const { isLoggedIn } = useFavorites();
   const { show } = useAuthPrompt();
   const zones = useMemo(() => getZones(spaces), [spaces]);
@@ -47,7 +49,7 @@ export default function SpacesExplorer({ spaces = [], initialType = "", hideType
     let out = spaces.filter((s) => {
       if (applied.zone && s.zone !== applied.zone) return false;
       if (applied.type && s.type !== applied.type) return false;
-      return AMENITY_FILTERS.every(({ key }) => !applied[key] || s[key] === applied[key]);
+      return AMENITY_KEYS.every((key) => !applied[key] || s[key] === applied[key]);
     });
     if (openNow) out = out.filter((s) => isOpenNow(s.hours, now || new Date()) === true);
     out = fuzzyFilter(out, query);
@@ -55,7 +57,7 @@ export default function SpacesExplorer({ spaces = [], initialType = "", hideType
   }, [spaces, applied, openNow, query, now]);
 
   const hasFilter =
-    applied.zone || applied.type || AMENITY_FILTERS.some(({ key }) => applied[key]) || query || openNow;
+    applied.zone || applied.type || AMENITY_KEYS.some((key) => applied[key]) || query || openNow;
 
   return (
     <div>
@@ -76,7 +78,7 @@ export default function SpacesExplorer({ spaces = [], initialType = "", hideType
         onSearch={() => {
           // I filtri sono riservati agli utenti registrati.
           if (!isLoggedIn && hasChosenFilters(pendingZone, pendingType, pendingFilters)) {
-            show("Accedi o registrati per usare i filtri");
+            show(t.authPrompt.filters);
             return;
           }
           setApplied({ zone: pendingZone, type: pendingType, ...pendingFilters });
@@ -94,10 +96,10 @@ export default function SpacesExplorer({ spaces = [], initialType = "", hideType
 
       <div className="mt-6 flex items-center justify-between">
         <p className="text-sm text-sam-muted">
-          {results.length} {results.length === 1 ? "spazio" : "spazi"}
+          {t.results.count(results.length)}
           {applied.zone && <> · <span className="font-semibold text-sam-brown">{applied.zone}</span></>}
-          {applied.type && <> · <span className="font-semibold text-sam-brown">{applied.type}</span></>}
-          {openNow && <> · <span className="font-semibold text-sam-green">aperti adesso</span></>}
+          {applied.type && <> · <span className="font-semibold text-sam-brown">{t.types[applied.type] ?? applied.type}</span></>}
+          {openNow && <> · <span className="font-semibold text-sam-green">{t.results.openNow}</span></>}
         </p>
       </div>
 

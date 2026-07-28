@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { openStatus } from "@/lib/utils";
+import { useI18n } from "@/components/I18nProvider";
 
 /**
  * Badge "Aperto ora / Chiuso" calcolato in tempo reale dagli orari.
@@ -9,6 +10,7 @@ import { openStatus } from "@/lib/utils";
  * (a meno di showUnknown).
  */
 export default function OpenNowBadge({ hours, size = "md", showUnknown = false }) {
+  const { t } = useI18n();
   // now nello state per aggiornare il badge col passare del tempo.
   const [now, setNow] = useState(null);
 
@@ -34,11 +36,11 @@ export default function OpenNowBadge({ hours, size = "md", showUnknown = false }
   const label =
     st.state === "open"
       ? st.closesAt
-        ? `Aperto · chiude alle ${st.closesAt}`
-        : "Aperto ora"
+        ? t.openStatus.openUntil(st.closesAt)
+        : t.openStatus.open
       : st.state === "closed"
-      ? "Chiuso ora"
-      : "Orari non disponibili";
+      ? t.openStatus.closed
+      : t.openStatus.unknown;
 
   const pad = size === "sm" ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-1 text-xs";
 

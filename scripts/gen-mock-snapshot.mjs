@@ -89,6 +89,7 @@ function normalizeSpace(page) {
   const categorie = getMultiSelect(p["Categoria"]);
   const types = [...new Set(categorie.map((c) => CATEGORY_TO_TYPE[c] || "Altro"))];
   const description = getText(p["Descrizione IT"]) || italianPart(getText(p["Descrizione"]));
+  const descriptionEn = getText(p["Descrizione EN"]);
 
   return {
     id: page.id.replace(/-/g, ""),
@@ -105,6 +106,7 @@ function normalizeSpace(page) {
     lat: getNumber(p["Latitude"]),
     lng: getNumber(p["Longitude"]),
     description,
+    descriptionEn: descriptionEn || null,
     googleMaps: getUrl(p["Google Maps"]) || null,
     website: getUrl(p["Sito Web"]) || null,
     image: getUrl(p["Foto"]) || null,

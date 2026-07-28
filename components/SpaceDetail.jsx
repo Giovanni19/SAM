@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { typeMeta, getAmenities, spaceJsonLd } from "@/lib/utils";
+import { typeMeta, getAmenities, spaceJsonLd, spaceDescription } from "@/lib/utils";
+import { getDictionary, localeHref } from "@/lib/i18n";
 import FavoriteButton from "@/components/FavoriteButton";
 import ShareButton from "@/components/ShareButton";
 import PopularTimesChart from "@/components/PopularTimesChart";
@@ -9,7 +10,6 @@ import Comments from "@/components/Comments";
 const BASE_URL = "https://www.studyareasmilan.it";
 
 const DAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
-const DAY_LABEL = { mon: "Lun", tue: "Mar", wed: "Mer", thu: "Gio", fri: "Ven", sat: "Sab", sun: "Dom" };
 
 const TONE = {
   good: { dot: "bg-sam-green", text: "text-sam-green" },
@@ -20,20 +20,26 @@ const TONE = {
 // Dettaglio di uno spazio. Riusato da SAM (/spaces/[id]) e SAM for Work
 // (/work/spaces/[id]); `backHref`/`backLabel` cambiano il link "indietro", e
 // il tema rosso arriva dal wrapper .theme-work della pagina Work.
-export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "← Tutti gli spazi", amenitiesTitle = "Com'è per studiare" }) {
-  const meta = typeMeta(space.type);
-  const amenities = getAmenities(space);
+export default function SpaceDetail({ space, lang, backHref = "/spaces", section = "study" }) {
+  const t = getDictionary(lang);
+  const href = (path) => localeHref(lang, path);
+  const meta = typeMeta(space.type, t);
+  const amenities = getAmenities(space, t);
+  const backLabel = section === "work" ? t.detail.backCoworking : t.detail.backSpaces;
+  const amenitiesTitle = section === "work" ? t.detail.amenitiesWork : t.detail.amenitiesStudy;
+  const description = spaceDescription(space, lang);
   const mapsUrl =
     space.googleMaps ||
     `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
       space.address || space.name
     )}`;
 
-  const canonicalUrl = `${BASE_URL}${backHref}/${space.id}`;
+  // Canonical della lingua corrente: in inglese l'URL include il prefisso /en.
+  const canonicalUrl = `${BASE_URL}${href(`${backHref}/${space.id}`)}`;
 
   // JSON-LD (dati strutturati Schema.org per i motori di ricerca). Il `<` è
   // escapato per sicurezza: rompe un eventuale "</script>" nascosto nei testi.
-  const jsonLd = spaceJsonLd(space, canonicalUrl);
+  const jsonLd = spaceJsonLd(space, canonicalUrl, lang);
   const jsonLdHtml = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
 
   return (
@@ -43,7 +49,7 @@ export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "
         dangerouslySetInnerHTML={{ __html: jsonLdHtml }}
       />
 
-      <Link href={backHref} className="text-sm font-semibold text-sam-green hover:underline">
+      <Link href={href(backHref)} className="text-sm font-semibold text-sam-green hover:underline">
         {backLabel}
       </Link>
 
@@ -64,7 +70,7 @@ export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "
           {space.rating != null && (
             <span
               className="ml-2 inline-flex items-center gap-1 rounded-full bg-sam-paper/15 px-3 py-1 text-xs font-semibold text-sam-paper"
-              title="Valutazione e recensioni da Google Maps"
+              title={t.detail.ratingTitle}
             >
               ★ {space.rating}
               {space.reviewsCount != null && <span className="opacity-70">({space.reviewsCount})</span>}
@@ -84,7 +90,7 @@ export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "
         </div>
 
         <div className="flex items-center gap-2">
-          <ShareButton url={canonicalUrl} title={space.name} text={space.description} />
+          <ShareButton url={canonicalUrl} title={space.name} text={description} />
           <FavoriteButton spaceId={space.id} />
         </div>
       </div>
@@ -93,7 +99,7 @@ export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "
         <div className="mt-4 flex items-start gap-3 rounded-2xl border border-sam-yellow/60 bg-sam-yellow/15 p-4">
           <span className="text-lg">⚠️</span>
           <p className="text-sm font-medium text-sam-brown">
-            <span className="font-semibold">Attenzione: </span>
+            <span className="font-semibold">{t.detail.warning}</span>
             {space.accessNote}
           </p>
         </div>
@@ -103,7 +109,7 @@ export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "
         <div className="mt-4 flex items-start gap-3 rounded-2xl border border-sam-green/30 bg-sam-green/10 p-4">
           <span className="text-lg">📅</span>
           <p className="text-sm font-medium text-sam-brown">
-            <span className="font-semibold">Prenotazione: </span>
+            <span className="font-semibold">{t.detail.booking}</span>
             {space.bookingNote}
           </p>
         </div>
@@ -115,10 +121,10 @@ export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "
             (orari, telefono, prenota) vengono prima dei commenti; da lg in su
             torna il layout a due colonne col ordine naturale del DOM. */}
         <div className="order-2 lg:order-1 lg:col-span-2">
-          {space.description && (
+          {description && (
             <>
-              <h2 className="font-display text-xl font-bold text-sam-green">Descrizione</h2>
-              <p className="mt-2 text-sam-brown/90">{space.description}</p>
+              <h2 className="font-display text-xl font-bold text-sam-green">{t.detail.description}</h2>
+              <p className="mt-2 text-sam-brown/90">{description}</p>
             </>
           )}
 
@@ -143,13 +149,13 @@ export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "
           </ul>
 
           <div className="mt-8">
-            <h2 className="font-display text-xl font-bold text-sam-green">Affollamento</h2>
+            <h2 className="font-display text-xl font-bold text-sam-green">{t.detail.crowding}</h2>
             <div className="mt-3">
               {space.popularTimes ? (
                 <PopularTimesChart popularTimes={space.popularTimes} />
               ) : (
                 <div className="rounded-2xl border border-sam-cream bg-white p-5 text-sm text-sam-muted">
-                  Dati affluenza non disponibili.
+                  {t.detail.noCrowding}
                 </div>
               )}
             </div>
@@ -163,25 +169,25 @@ export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "
         {/* Sidebar */}
         <aside className="order-1 space-y-4 lg:order-2">
           <div className="rounded-2xl border border-sam-cream bg-white p-5">
-            <h3 className="font-display font-semibold text-sam-green">Informazioni</h3>
+            <h3 className="font-display font-semibold text-sam-green">{t.detail.info}</h3>
             <dl className="mt-3 space-y-3 text-sm">
               <div>
-                <dt className="font-semibold text-sam-green">Tipo</dt>
+                <dt className="font-semibold text-sam-green">{t.detail.type}</dt>
                 <dd className="text-sam-brown/90">{meta.label}</dd>
               </div>
               {space.zone && (
                 <div>
-                  <dt className="font-semibold text-sam-green">Zona</dt>
+                  <dt className="font-semibold text-sam-green">{t.detail.zone}</dt>
                   <dd className="text-sam-brown/90">{space.zone}</dd>
                 </div>
               )}
               <div>
-                <dt className="font-semibold text-sam-green">Indirizzo</dt>
+                <dt className="font-semibold text-sam-green">{t.detail.address}</dt>
                 <dd className="text-sam-brown/90">{space.address}</dd>
               </div>
               {space.phone && (
                 <div>
-                  <dt className="font-semibold text-sam-green">Telefono</dt>
+                  <dt className="font-semibold text-sam-green">{t.detail.phone}</dt>
                   <dd>
                     <a href={`tel:${space.phone}`} className="text-sam-brown/90 hover:underline">
                       {space.phone}
@@ -192,12 +198,12 @@ export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "
               {space.hours && (
                 <div>
                   <dt className="flex items-center gap-2 font-semibold text-sam-green">
-                    Orari <OpenNowBadge hours={space.hours} size="sm" />
+                    {t.detail.hours} <OpenNowBadge hours={space.hours} size="sm" />
                   </dt>
                   <dd className="mt-1 space-y-0.5 text-sam-brown/90">
                     {DAY_ORDER.filter((d) => space.hours[d]).map((d) => (
                       <div key={d} className="flex justify-between gap-2">
-                        <span className="text-sam-muted">{DAY_LABEL[d]}</span>
+                        <span className="text-sam-muted">{t.days[d]}</span>
                         <span>{space.hours[d]}</span>
                       </div>
                     ))}
@@ -209,7 +215,7 @@ export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "
             <div className="mt-5 flex flex-col gap-2">
               {space.bookingUrl && (
                 <a href={space.bookingUrl} target="_blank" rel="noopener noreferrer" className="btn-primary w-full">
-                  📅 Prenota il tuo posto
+                  {t.detail.book}
                 </a>
               )}
               <a
@@ -218,11 +224,11 @@ export default function SpaceDetail({ space, backHref = "/spaces", backLabel = "
                 rel="noopener noreferrer"
                 className={space.bookingUrl ? "btn-outline w-full" : "btn-primary w-full"}
               >
-                Apri in Google Maps
+                {t.detail.openMaps}
               </a>
               {space.website && (
                 <a href={space.website} target="_blank" rel="noopener noreferrer" className="btn-outline w-full">
-                  Sito web
+                  {t.detail.website}
                 </a>
               )}
             </div>

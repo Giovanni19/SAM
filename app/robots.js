@@ -1,7 +1,9 @@
+import { LOCALES, DEFAULT_LOCALE } from "@/lib/i18n";
+
 const BASE_URL = "https://www.studyareasmilan.it";
 
 // Route senza valore SEO o specifiche per utente: fuori dall'indicizzazione.
-const DISALLOW = [
+const PRIVATE_PATHS = [
   "/account",
   "/login",
   "/signup",
@@ -11,6 +13,11 @@ const DISALLOW = [
   "/favorites",
   "/work/favorites",
 ];
+
+// Le stesse route vanno escluse anche nella versione inglese (/en/login…).
+const DISALLOW = LOCALES.flatMap((lang) =>
+  PRIVATE_PATHS.map((p) => (lang === DEFAULT_LOCALE ? p : `/${lang}${p}`))
+);
 
 /** robots.txt generato da Next.js su /robots.txt (App Router file convention). */
 export default function robots() {

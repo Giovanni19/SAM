@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { setConsent, applyStoredConsent } from "@/lib/consent";
+import { useI18n } from "@/components/I18nProvider";
 
 // Banner di consenso cookie (Google Consent Mode v2). GTM parte sempre con
 // tutti i segnali su 'denied': i tag di analytics/marketing restano bloccati
 // finché l'utente non sceglie qui. Bottoni "Rifiuta"/"Accetta" a pari peso
 // visivo, come richiesto dalle linee guida del Garante Privacy.
 export default function CookieConsentBanner() {
+  const { t, href } = useI18n();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -27,10 +29,9 @@ export default function CookieConsentBanner() {
     <div className="fixed inset-x-0 bottom-0 z-50 border-t border-sam-cream bg-white/95 p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] backdrop-blur">
       <div className="container-sam flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
         <p className="text-[12px] leading-snug text-sam-brown/90 sm:max-w-xl">
-          Usiamo cookie tecnici necessari e, solo con il tuo consenso, cookie di analisi per capire come
-          viene usato il sito.{" "}
-          <Link href="/cookie" className="font-semibold text-sam-green hover:underline">
-            Scopri di più
+          {t.cookieBanner.text}{" "}
+          <Link href={href("/cookie")} className="font-semibold text-sam-green hover:underline">
+            {t.cookieBanner.more}
           </Link>
           .
         </p>
@@ -40,14 +41,14 @@ export default function CookieConsentBanner() {
             onClick={() => choose("denied")}
             className="rounded-xl border border-sam-cream px-4 py-2 text-sm font-semibold text-sam-brown"
           >
-            Rifiuta
+            {t.cookieBanner.reject}
           </button>
           <button
             type="button"
             onClick={() => choose("granted")}
             className="rounded-xl bg-sam-green px-4 py-2 text-sm font-semibold text-white"
           >
-            Accetta
+            {t.cookieBanner.accept}
           </button>
         </div>
       </div>

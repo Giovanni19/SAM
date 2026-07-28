@@ -5,18 +5,19 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   typeMeta, getAmenities, distanceKm, formatDistance,
-  getZones, getTypes, AMENITY_FILTERS, fuzzyFilter, isOpenNow,
+  getZones, getTypes, AMENITY_KEYS, fuzzyFilter, isOpenNow,
 } from "@/lib/utils";
 import SearchBar from "@/components/SearchBar";
 import OpenNowBadge from "@/components/OpenNowBadge";
 import { useFavorites } from "@/lib/useFavorites";
+import { useI18n } from "@/components/I18nProvider";
 import { useAuthPrompt } from "@/components/AuthPrompt";
 
-const EMPTY_AMENITY_FILTERS = Object.fromEntries(AMENITY_FILTERS.map((f) => [f.key, ""]));
+const EMPTY_AMENITY_FILTERS = Object.fromEntries(AMENITY_KEYS.map((k) => [k, ""]));
 
 // True se sono stati scelti dei filtri (Zona / Tipo / amenità) da applicare.
 function hasChosenFilters(zone, type, filters) {
-  return Boolean(zone || type || AMENITY_FILTERS.some(({ key }) => filters[key]));
+  return Boolean(zone || type || AMENITY_KEYS.some((key) => filters[key]));
 }
 
 // Leaflet usa `window`: carichiamo la mappa solo lato client (niente SSR).
@@ -28,8 +29,12 @@ const LeafletMap = dynamic(() => import("./LeafletMap"), {
     </div>
   ),
 });
+// NB: il fallback di caricamento vive fuori dal componente (dynamic() gira a
+// livello di modulo) e resta in italiano: compare per una frazione di secondo
+// e non giustifica di trasformare l'import dinamico in uno stato del render.
 
 export default function MapView({ spaces = [], hideType = false, basePath = "/spaces" }) {
+  const { t } = useI18n();
   const { isLoggedIn } = useFavorites();
   const { show } = useAuthPrompt();
   const zones = useMemo(() => getZones(spaces), [spaces]);
@@ -53,7 +58,7 @@ export default function MapView({ spaces = [], hideType = false, basePath = "/sp
     let out = spaces.filter((s) => {
       if (applied.zone && s.zone !== applied.zone) return false;
       if (applied.type && s.type !== applied.type) return false;
-      return AMENITY_FILTERS.every(({ key }) => !applied[key] || s[key] === applied[key]);
+      return AMENITY_KEYS.every((key) => !applied[key] || s[key] === applied[key]);
     });
     if (openNow) out = out.filter((s) => isOpenNow(s.hours, now || new Date()) === true);
     out = fuzzyFilter(out, query);
@@ -94,13 +99,10 @@ export default function MapView({ spaces = [], hideType = false, basePath = "/sp
       .slice(0, 8);
   }, [filtered, userPos]);
 
-  const statusMsg = {
-    denied: "Permesso negato. Attivalo dalle impostazioni del browser per vedere i posti vicini.",
-    error: "Impossibile ottenere la posizione. Riprova.",
-  }[status];
+  const statusMsg = { denied: t.map.denied, error: t.map.error }[status];
 
   const canReset =
-    applied.zone || applied.type || AMENITY_FILTERS.some(({ key }) => applied[key]) || query || openNow;
+    applied.zone || applied.type || AMENITY_KEYS.some((key) => applied[key]) || query || openNow;
 
   return (
     <div>
@@ -121,7 +123,7 @@ export default function MapView({ spaces = [], hideType = false, basePath = "/sp
         onSearch={() => {
           // I filtri sono riservati agli utenti registrati.
           if (!isLoggedIn && hasChosenFilters(pendingZone, pendingType, pendingFilters)) {
-            show("Accedi o registrati per usare i filtri");
+            show(t.authPrompt.filters);
             return;
           }
           setApplied({ zone: pendingZone, type: pendingType, ...pendingFilters });
@@ -150,7 +152,7 @@ export default function MapView({ spaces = [], hideType = false, basePath = "/sp
             onClick={locate}
             className="btn-primary absolute right-3 top-3 z-[1000] shadow-card"
           >
-            {status === "loading" ? "Individuo…" : "📍 La mia posizione"}
+            {status === "loading" ? t.map.locating : t.map.myPosition}
           </button>
         </div>
 
@@ -160,22 +162,19 @@ export default function MapView({ spaces = [], hideType = false, basePath = "/sp
             <SpacePreview space={selected} basePath={basePath} onClose={() => setSelectedId(null)} />
           ) : !userPos ? (
             <div>
-              <h2 className="font-display font-bold text-sam-green">Trova i posti vicini</h2>
-              <p className="mt-2 text-sm text-sam-muted">
-                Tocca un pin per l'anteprima, oppure attiva la posizione per vedere
-                i posti più vicini ordinati per distanza.
-              </p>
+              <h2 className="font-display font-bold text-sam-green">{t.map.nearbyTitle}</h2>
+              <p className="mt-2 text-sm text-sam-muted">{t.map.nearbyHint}</p>
               <button onClick={locate} className="btn-primary mt-4 w-full">
-                📍 Usa la mia posizione
+                {t.map.useMyPosition}
               </button>
               {statusMsg && <p className="mt-3 text-sm text-sam-coral">{statusMsg}</p>}
             </div>
           ) : (
             <div>
-              <h2 className="font-display font-bold text-sam-green">Più vicini a te</h2>
+              <h2 className="font-display font-bold text-sam-green">{t.map.nearestTitle}</h2>
               <ul className="mt-3 space-y-1">
                 {nearest.map((s) => {
-                  const meta = typeMeta(s.type);
+                  const meta = typeMeta(s.type, t);
                   return (
                     <li key={s.id}>
                       <button
@@ -205,8 +204,9 @@ export default function MapView({ spaces = [], hideType = false, basePath = "/sp
 
 /** Anteprima del posto selezionato sulla mappa. */
 function SpacePreview({ space, onClose, basePath = "/spaces" }) {
-  const meta = typeMeta(space.type);
-  const amenities = getAmenities(space).slice(0, 4);
+  const { t, href } = useI18n();
+  const meta = typeMeta(space.type, t);
+  const amenities = getAmenities(space, t).slice(0, 4);
 
   return (
     <div>
@@ -214,7 +214,7 @@ function SpacePreview({ space, onClose, basePath = "/spaces" }) {
         <h2 className="font-display font-bold leading-tight text-sam-green">{space.name}</h2>
         <button
           onClick={onClose}
-          aria-label="Chiudi anteprima"
+          aria-label={t.map.closePreview}
           className="shrink-0 rounded-full px-2 text-sam-muted hover:bg-sam-cream"
         >
           ✕
@@ -231,7 +231,7 @@ function SpacePreview({ space, onClose, basePath = "/spaces" }) {
           {meta.emoji} {meta.label}
         </span>
         {space.rating != null && (
-          <span className="text-sam-brown" title="Valutazione Google Maps">
+          <span className="text-sam-brown" title={t.map.ratingTitle}>
             ★ {space.rating}
             {space.reviewsCount != null && <span className="text-sam-muted"> ({space.reviewsCount})</span>}
             <span className="text-sam-muted"> · Google</span>
@@ -247,7 +247,7 @@ function SpacePreview({ space, onClose, basePath = "/spaces" }) {
         <div className="mt-2 flex items-start gap-2 rounded-xl border border-sam-yellow/60 bg-sam-yellow/15 p-2.5">
           <span className="text-sm">⚠️</span>
           <p className="text-xs font-medium text-sam-brown">
-            <span className="font-semibold">Attenzione: </span>
+            <span className="font-semibold">{t.detail.warning}</span>
             {space.accessNote}
           </p>
         </div>
@@ -267,8 +267,8 @@ function SpacePreview({ space, onClose, basePath = "/spaces" }) {
         </ul>
       )}
 
-      <Link href={`${basePath}/${space.id}`} className="btn-primary mt-4 w-full">
-        Vedi dettagli
+      <Link href={href(`${basePath}/${space.id}`)} className="btn-primary mt-4 w-full">
+        {t.map.viewDetails}
       </Link>
     </div>
   );

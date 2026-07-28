@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthPrompt } from "@/components/AuthPrompt";
+import { useI18n } from "@/components/I18nProvider";
+import { COMMENT_FEEDBACK, commentTagLabel } from "@/lib/utils";
 
 const inputClass =
   "w-full rounded-xl border border-sam-cream bg-sam-paper px-4 py-2.5 text-sm outline-none focus:border-sam-green";
@@ -11,17 +13,6 @@ const inputClass =
 // dei filtri (quello descrive lo spazio, questo l'esperienza di chi ci va).
 // Una sola scelta per categoria (pro/neutro/contro): evita combinazioni
 // contraddittorie tipo "WiFi veloce" + "WiFi lento" sullo stesso commento.
-const FEEDBACK_CATEGORIES = [
-  { key: "pulizia", label: "Pulizia", options: ["🧼 Ambiente pulito", "😐 Ambiente nella media", "🧹 Poco pulito"] },
-  { key: "bagno", label: "Bagno", options: ["🚻 Bagno pulito", "😐 Bagno nella media", "🚽 Bagno sporco"] },
-  { key: "wifi", label: "WiFi", options: ["📶 WiFi veloce", "😐 WiFi nella media", "📵 WiFi lento o assente"] },
-  { key: "prese", label: "Prese", options: ["🔌 Tante prese", "😐 Prese sufficienti", "🪫 Poche prese"] },
-  { key: "rumore", label: "Rumore", options: ["🤫 Tranquillo per concentrarsi", "😐 Rumore nella media", "🔊 Troppo rumoroso"] },
-  { key: "posti", label: "Posti a sedere", options: ["🪑 Posti comodi", "😐 Posti nella media", "🥴 Posti scomodi"] },
-  { key: "personale", label: "Personale", options: ["😊 Personale gentile", "😐 Personale nella media", "😒 Personale scortese"] },
-  { key: "prezzi", label: "Prezzi", options: ["💰 Prezzi onesti", "😐 Prezzi nella media", "💸 Prezzi alti"] },
-  { key: "accessibilita", label: "Accessibilità", options: ["♿ Accessibile in carrozzina", "😐 Accessibilità nella media", "🚫 Non accessibile"] },
-];
 // Stile del chip in base alla posizione nella terna (0=pro, 1=neutro, 2=contro).
 const TONE_CLASS = [
   "bg-sam-green text-sam-paper",
@@ -31,12 +22,14 @@ const TONE_CLASS = [
 
 // Selettore pro/neutro/contro per categoria: usato sia per un nuovo commento
 // che per modificarne uno esistente.
-function CategoryPicker({ categories, selected, onSelect }) {
+function CategoryPicker({ categories, selected, onSelect, t }) {
   return (
     <div className="space-y-1.5">
-      {categories.map(({ key, label, options }) => (
+      {categories.map(({ key, options }) => (
         <div key={key} className="flex flex-wrap items-center gap-1.5">
-          <span className="w-28 shrink-0 text-xs font-semibold text-sam-green">{label}</span>
+          <span className="w-28 shrink-0 text-xs font-semibold text-sam-green">
+            {t.comments.groups[key] ?? key}
+          </span>
           {options.map((opt, i) => {
             const active = selected[key] === opt;
             return (
@@ -49,7 +42,7 @@ function CategoryPicker({ categories, selected, onSelect }) {
                   active ? TONE_CLASS[i] : "bg-sam-cream text-sam-brown hover:bg-sam-cream/70"
                 }`}
               >
-                {opt}
+                {commentTagLabel(opt, t)}
               </button>
             );
           })}
@@ -64,8 +57,9 @@ function CategoryPicker({ categories, selected, onSelect }) {
 // minima: dopo 3 segnalazioni distinte un commento si nasconde da solo (vedi
 // report_comment() in supabase/schema.sql) — niente pannello admin per ora.
 export default function Comments({ placeId, spaceType }) {
+  const { t } = useI18n();
   // Le biblioteche non hanno un prezzo da valutare.
-  const categories = FEEDBACK_CATEGORIES.filter(
+  const categories = COMMENT_FEEDBACK.filter(
     (c) => !(spaceType === "Biblioteca" && c.key === "prezzi")
   );
 
@@ -139,7 +133,7 @@ export default function Comments({ placeId, spaceType }) {
     const { data: userData } = await supabase.auth.getUser();
     const user = userData.user;
     if (!user) {
-      show("Accedi o registrati per lasciare un commento");
+      show(t.authPrompt.comment);
       return;
     }
 
@@ -161,7 +155,7 @@ export default function Comments({ placeId, spaceType }) {
 
     if (insertError) {
       console.error("[comments] insert fallito:", insertError.message);
-      setError("Non è stato possibile pubblicare il commento. Riprova.");
+      setError(t.comments.postError);
     } else {
       setComments((prev) => [inserted, ...prev]);
       setContent("");
@@ -183,7 +177,7 @@ export default function Comments({ placeId, spaceType }) {
     const supabase = createClient();
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) {
-      show("Accedi per segnalare un commento");
+      show(t.authPrompt.report);
       return;
     }
     setReported((r) => [...r, id]);
@@ -195,7 +189,7 @@ export default function Comments({ placeId, spaceType }) {
     const { data: userData } = await supabase.auth.getUser();
     const user = userData.user;
     if (!user) {
-      show("Accedi per mettere like a un commento");
+      show(t.authPrompt.like);
       return;
     }
 
@@ -252,7 +246,7 @@ export default function Comments({ placeId, spaceType }) {
 
   return (
     <div>
-      <h2 className="font-display text-xl font-bold text-sam-green">Commenti</h2>
+      <h2 className="font-display text-xl font-bold text-sam-green">{t.comments.title}</h2>
 
       <form onSubmit={handleSubmit} className="mt-3 space-y-2">
         <textarea
@@ -260,12 +254,12 @@ export default function Comments({ placeId, spaceType }) {
           onChange={(e) => setContent(e.target.value)}
           maxLength={500}
           rows={3}
-          placeholder="Com'è andata la tua sessione di studio qui?"
+          placeholder={t.comments.placeholder}
           className={`${inputClass} resize-none`}
         />
 
         {/* Feedback rapido, opzionale: una scelta pro/neutro/contro per categoria. */}
-        <CategoryPicker categories={categories} selected={selected} onSelect={selectOption} />
+        <CategoryPicker categories={categories} selected={selected} onSelect={selectOption} t={t} />
 
         {error && <p className="text-sm text-sam-coral">{error}</p>}
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -276,18 +270,18 @@ export default function Comments({ placeId, spaceType }) {
               onChange={(e) => setAnonymous(e.target.checked)}
               className="h-4 w-4 rounded border-sam-cream text-sam-green focus:ring-sam-green"
             />
-            Commenta in modo anonimo
+            {t.comments.anonymous}
           </label>
           <button type="submit" disabled={pending || !content.trim()} className="btn-primary disabled:opacity-60">
-            {pending ? "Pubblicazione…" : "Pubblica commento"}
+            {pending ? t.comments.publishing : t.comments.publish}
           </button>
         </div>
       </form>
 
       <div className="mt-5 space-y-3">
-        {!ready && <p className="text-sm text-sam-muted">Caricamento commenti…</p>}
+        {!ready && <p className="text-sm text-sam-muted">{t.comments.loading}</p>}
         {ready && comments.length === 0 && (
-          <p className="text-sm text-sam-muted">Ancora nessun commento: scrivi il primo.</p>
+          <p className="text-sm text-sam-muted">{t.comments.empty}</p>
         )}
         {comments.map((c) =>
           editingId === c.id ? (
@@ -300,11 +294,11 @@ export default function Comments({ placeId, spaceType }) {
                 className={`${inputClass} resize-none`}
               />
               <div className="mt-2">
-                <CategoryPicker categories={categories} selected={editSelected} onSelect={selectEditOption} />
+                <CategoryPicker categories={categories} selected={editSelected} onSelect={selectEditOption} t={t} />
               </div>
               <div className="mt-2 flex justify-end gap-2">
                 <button type="button" onClick={cancelEdit} className="btn-outline px-4 py-1.5 text-xs">
-                  Annulla
+                  {t.comments.cancel}
                 </button>
                 <button
                   type="button"
@@ -312,7 +306,7 @@ export default function Comments({ placeId, spaceType }) {
                   onClick={() => saveEdit(c.id)}
                   className="btn-primary px-4 py-1.5 text-xs disabled:opacity-60"
                 >
-                  {editPending ? "Salvataggio…" : "Salva modifiche"}
+                  {editPending ? t.comments.saving : t.comments.save}
                 </button>
               </div>
             </div>
@@ -320,23 +314,23 @@ export default function Comments({ placeId, spaceType }) {
             <div key={c.id} className="rounded-2xl border border-sam-cream bg-white p-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-sam-green">
-                  {c.is_anonymous ? "🕶️ Anonimo" : c.user_name}
+                  {c.is_anonymous ? t.comments.anonName : c.user_name}
                 </span>
                 <span className="text-xs text-sam-muted">
-                  {new Date(c.created_at).toLocaleDateString("it-IT", {
+                  {new Date(c.created_at).toLocaleDateString(t.dateLocale, {
                     day: "numeric",
                     month: "short",
                     year: "numeric",
                   })}
-                  {c.edited_at && " · modificato"}
+                  {c.edited_at && t.comments.editedSuffix}
                 </span>
               </div>
               <p className="mt-1 whitespace-pre-wrap text-sm text-sam-brown/90">{c.content}</p>
               {c.tags?.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
-                  {c.tags.map((t) => (
-                    <span key={t} className="rounded-full bg-sam-cream px-2.5 py-0.5 text-[11px] font-medium text-sam-brown">
-                      {t}
+                  {c.tags.map((tag) => (
+                    <span key={tag} className="rounded-full bg-sam-cream px-2.5 py-0.5 text-[11px] font-medium text-sam-brown">
+                      {commentTagLabel(tag, t)}
                     </span>
                   ))}
                 </div>
@@ -359,14 +353,14 @@ export default function Comments({ placeId, spaceType }) {
                       onClick={() => startEdit(c)}
                       className="font-semibold text-sam-green hover:underline"
                     >
-                      Modifica
+                      {t.comments.edit}
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDelete(c.id)}
                       className="font-semibold text-sam-coral hover:underline"
                     >
-                      Elimina
+                      {t.comments.delete}
                     </button>
                   </div>
                 ) : (
@@ -376,7 +370,7 @@ export default function Comments({ placeId, spaceType }) {
                     onClick={() => handleReport(c.id)}
                     className="font-semibold text-sam-muted hover:underline disabled:no-underline disabled:opacity-60"
                   >
-                    {reported.includes(c.id) ? "Segnalato" : "Segnala"}
+                    {reported.includes(c.id) ? t.comments.reported : t.comments.report}
                   </button>
                 )}
               </div>
