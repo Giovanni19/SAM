@@ -3,6 +3,7 @@
 import Link from "next/link";
 import FavoriteButton from "./FavoriteButton";
 import OpenNowBadge from "./OpenNowBadge";
+import SpaceImage from "./SpaceImage";
 import { typeMeta, getAmenities } from "@/lib/utils";
 import { useI18n } from "@/components/I18nProvider";
 
@@ -22,14 +23,14 @@ export default function SpaceCard({ space, basePath = "/spaces" }) {
       href={href(`${basePath}/${space.id}`)}
       className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-card transition hover:-translate-y-1 hover:shadow-card-hover"
     >
-      {/* Foto se presente, altrimenti header colorato con emoji */}
+      {/* Foto se presente e caricabile, altrimenti header colorato con emoji */}
       <div className="relative flex h-28 items-center justify-center overflow-hidden bg-gradient-to-br from-sam-green to-sam-green-dark">
-        {space.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={space.image} alt={space.name} className="h-full w-full object-cover" />
-        ) : (
-          <span className="text-4xl opacity-90">{meta.emoji}</span>
-        )}
+        <SpaceImage
+          src={space.image}
+          alt={space.name}
+          className="h-full w-full object-cover"
+          fallback={<span className="text-4xl opacity-90">{meta.emoji}</span>}
+        />
 
         <span
           className={`absolute left-3 top-3 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-white ${meta.color}`}

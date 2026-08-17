@@ -9,6 +9,7 @@ import {
 } from "@/lib/utils";
 import SearchBar from "@/components/SearchBar";
 import OpenNowBadge from "@/components/OpenNowBadge";
+import SpaceImage from "@/components/SpaceImage";
 import { useFavorites } from "@/lib/useFavorites";
 import { useI18n } from "@/components/I18nProvider";
 import { useAuthPrompt } from "@/components/AuthPrompt";
@@ -221,10 +222,11 @@ function SpacePreview({ space, onClose, basePath = "/spaces" }) {
         </button>
       </div>
 
-      {space.image && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={space.image} alt={space.name} className="mt-2 h-32 w-full rounded-xl object-cover" />
-      )}
+      <SpaceImage
+        src={space.image}
+        alt={space.name}
+        className="mt-2 h-32 w-full rounded-xl object-cover"
+      />
 
       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
         <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold text-white ${meta.color}`}>

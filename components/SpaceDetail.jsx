@@ -5,6 +5,7 @@ import FavoriteButton from "@/components/FavoriteButton";
 import ShareButton from "@/components/ShareButton";
 import PopularTimesChart from "@/components/PopularTimesChart";
 import OpenNowBadge from "@/components/OpenNowBadge";
+import SpaceImage from "@/components/SpaceImage";
 import Comments from "@/components/Comments";
 
 const BASE_URL = "https://www.studyareasmilan.it";
@@ -53,13 +54,14 @@ export default function SpaceDetail({ space, lang, backHref = "/spaces", section
         {backLabel}
       </Link>
 
-      {/* Foto, se presente */}
-      {space.image && (
-        <div className="mt-4 h-56 overflow-hidden rounded-2xl sm:h-72">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={space.image} alt={space.name} className="h-full w-full object-cover" />
-        </div>
-      )}
+      {/* Foto, se presente e caricabile: altrimenti la fascia sparisce del tutto
+          e la pagina resta identica a quella di uno spazio senza foto. */}
+      <SpaceImage
+        src={space.image}
+        alt={space.name}
+        wrapperClassName="mt-4 h-56 overflow-hidden rounded-2xl sm:h-72"
+        className="h-full w-full object-cover"
+      />
 
       {/* Hero */}
       <div className="mt-4 flex flex-col gap-4 rounded-2xl bg-gradient-to-br from-sam-green to-sam-green-dark p-6 text-sam-paper sm:flex-row sm:items-center sm:justify-between">
