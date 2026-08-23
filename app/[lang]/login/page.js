@@ -6,6 +6,7 @@ import Link from "next/link";
 import { magicLink } from "@/app/auth/actions";
 import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/components/I18nProvider";
+import { authMessage } from "@/lib/i18n";
 
 const inputClass =
   "w-full rounded-xl border border-sam-cream bg-sam-paper px-4 py-2.5 text-sm outline-none focus:border-sam-green";
@@ -34,8 +35,11 @@ function SubmitButton({ children, variant = "primary" }) {
 }
 
 function Feedback({ state }) {
-  if (state?.error) return <p className="text-sm text-sam-coral">{state.error}</p>;
-  if (state?.message) return <p className="text-sm text-sam-green">{state.message}</p>;
+  const { t } = useI18n();
+  if (state?.errorCode)
+    return <p className="text-sm text-sam-coral">{authMessage(state.errorCode, t)}</p>;
+  if (state?.messageCode)
+    return <p className="text-sm text-sam-green">{authMessage(state.messageCode, t)}</p>;
   return null;
 }
 

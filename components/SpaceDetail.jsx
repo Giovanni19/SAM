@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { typeMeta, getAmenities, spaceJsonLd, spaceDescription } from "@/lib/utils";
+import { typeMeta, getAmenities, spaceJsonLd, spaceDescription, spaceNote } from "@/lib/utils";
 import { getDictionary, localeHref } from "@/lib/i18n";
 import FavoriteButton from "@/components/FavoriteButton";
 import ShareButton from "@/components/ShareButton";
@@ -29,6 +29,8 @@ export default function SpaceDetail({ space, lang, backHref = "/spaces", section
   const backLabel = section === "work" ? t.detail.backCoworking : t.detail.backSpaces;
   const amenitiesTitle = section === "work" ? t.detail.amenitiesWork : t.detail.amenitiesStudy;
   const description = spaceDescription(space, lang);
+  const accessNote = spaceNote(space, "accessNote", lang);
+  const bookingNote = spaceNote(space, "bookingNote", lang);
   const mapsUrl =
     space.googleMaps ||
     `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -97,22 +99,22 @@ export default function SpaceDetail({ space, lang, backHref = "/spaces", section
         </div>
       </div>
 
-      {space.accessNote && (
+      {accessNote && (
         <div className="mt-4 flex items-start gap-3 rounded-2xl border border-sam-yellow/60 bg-sam-yellow/15 p-4">
           <span className="text-lg">⚠️</span>
           <p className="text-sm font-medium text-sam-brown">
             <span className="font-semibold">{t.detail.warning}</span>
-            {space.accessNote}
+            {accessNote}
           </p>
         </div>
       )}
 
-      {space.bookingNote && (
+      {bookingNote && (
         <div className="mt-4 flex items-start gap-3 rounded-2xl border border-sam-green/30 bg-sam-green/10 p-4">
           <span className="text-lg">📅</span>
           <p className="text-sm font-medium text-sam-brown">
             <span className="font-semibold">{t.detail.booking}</span>
-            {space.bookingNote}
+            {bookingNote}
           </p>
         </div>
       )}

@@ -1,16 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useI18n } from "@/components/I18nProvider";
 
-const DAYS = [
-  { key: "mon", label: "Lun", full: "Lunedì" },
-  { key: "tue", label: "Mar", full: "Martedì" },
-  { key: "wed", label: "Mer", full: "Mercoledì" },
-  { key: "thu", label: "Gio", full: "Giovedì" },
-  { key: "fri", label: "Ven", full: "Venerdì" },
-  { key: "sat", label: "Sab", full: "Sabato" },
-  { key: "sun", label: "Dom", full: "Domenica" },
-];
+// Solo le chiavi: le etichette (abbreviata e per esteso) arrivano dal
+// dizionario, così il grafico parla la lingua della pagina.
+const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
 function barColor(score) {
   if (score >= 70) return "bg-sam-coral";
@@ -23,25 +18,24 @@ const hh = (h) => `${String(h).padStart(2, "0")}:00`;
 
 /** Grafico affollamento (dati storici Google Maps) con asse Y e barre cliccabili. */
 export default function PopularTimesChart({ popularTimes }) {
-  const availableDays = DAYS.filter(
-    (d) => Array.isArray(popularTimes?.[d.key]) && popularTimes[d.key].length
+  const { t } = useI18n();
+  const availableDays = DAY_KEYS.filter(
+    (key) => Array.isArray(popularTimes?.[key]) && popularTimes[key].length
   );
-  const todayKey = DAYS[(new Date().getDay() + 6) % 7].key; // lun=0 ... dom=6
-  const defaultDay =
-    availableDays.find((d) => d.key === todayKey)?.key || availableDays[0]?.key || "";
+  const todayKey = DAY_KEYS[(new Date().getDay() + 6) % 7]; // lun=0 ... dom=6
+  const defaultDay = availableDays.find((key) => key === todayKey) || availableDays[0] || "";
   const [day, setDay] = useState(defaultDay);
   const [selected, setSelected] = useState(null); // ora selezionata (0–23)
 
   if (!availableDays.length) {
     return (
       <div className="rounded-2xl border border-sam-cream bg-white p-5 text-sm text-sam-muted">
-        Dati affluenza non disponibili.
+        {t.detail.noCrowding}
       </div>
     );
   }
 
-  const activeDay = availableDays.some((d) => d.key === day) ? day : defaultDay;
-  const dayInfo = DAYS.find((d) => d.key === activeDay);
+  const activeDay = availableDays.includes(day) ? day : defaultDay;
   const scores = popularTimes[activeDay] || [];
   const selScore = selected != null ? scores[selected] ?? 0 : null;
 
@@ -51,24 +45,26 @@ export default function PopularTimesChart({ popularTimes }) {
 
   return (
     <div className="rounded-2xl border border-sam-cream bg-white p-5">
-      {/* Intestazione + selettore giorno */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="font-display font-semibold text-sam-green">Quanto è affollato</h3>
+      {/* Selettore giorno. Niente titolo qui dentro: la sezione che ospita il
+          grafico ha già il proprio <h2> con lo stesso testo (t.detail.crowding),
+          e ripeterlo lo mostrava due volte di fila. */}
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <div className="flex flex-wrap gap-1">
-          {availableDays.map((d) => (
+          {availableDays.map((key) => (
             <button
-              key={d.key}
+              key={key}
               onClick={() => {
-                setDay(d.key);
+                setDay(key);
                 setSelected(null);
               }}
+              aria-pressed={key === activeDay}
               className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
-                d.key === activeDay
+                key === activeDay
                   ? "bg-sam-green text-sam-paper"
                   : "bg-sam-paper text-sam-brown hover:bg-sam-cream"
               }`}
             >
-              {d.label}
+              {t.days[key]}
             </button>
           ))}
         </div>
@@ -77,15 +73,17 @@ export default function PopularTimesChart({ popularTimes }) {
       {/* Nota fascia selezionata */}
       <div className="mt-3 min-h-[2.25rem] rounded-xl bg-sam-paper px-3 py-2 text-sm">
         {selected == null ? (
-          <span className="text-sam-muted">Tocca una barra per vedere l'orario e la percentuale esatti.</span>
+          <span className="text-sam-muted">{t.crowd.hint}</span>
         ) : (
           <span className="text-sam-brown">
-            <span className="font-semibold text-sam-green">{dayInfo?.full}</span>{" "}
+            <span className="font-semibold text-sam-green">{t.daysFull[activeDay]}</span>{" "}
             {hh(selected)}–{hh((selected + 1) % 24)} ·{" "}
             {selScore > 0 ? (
-              <><span className="font-bold text-sam-green">{selScore}%</span> di affollamento</>
+              <>
+                <span className="font-bold text-sam-green">{selScore}%</span> {t.crowd.busyness}
+              </>
             ) : (
-              <span className="text-sam-muted">poco affollato o chiuso</span>
+              <span className="text-sam-muted">{t.crowd.quiet}</span>
             )}
           </span>
         )}
@@ -117,7 +115,7 @@ export default function PopularTimesChart({ popularTimes }) {
                   key={hour}
                   type="button"
                   onClick={() => pick(hour)}
-                  aria-label={`${hh(hour)} — ${score}% di affollamento`}
+                  aria-label={t.crowd.barLabel(hh(hour), score)}
                   className="flex h-full flex-1 items-end"
                 >
                   <div
@@ -143,10 +141,10 @@ export default function PopularTimesChart({ popularTimes }) {
 
       {/* Spiegazione */}
       <p className="mt-3 border-t border-sam-cream pt-3 text-xs leading-relaxed text-sam-muted">
-        <span className="font-semibold text-sam-brown">Dati storici di Google Maps</span>, non in tempo
-        reale: sono la media delle visite passate in ogni fascia oraria. La percentuale indica
-        quanto è pieno il locale <span className="font-semibold">rispetto alla sua ora di punta della
-        settimana</span> (100% = massimo affollamento abituale, non capienza reale).
+        <span className="font-semibold text-sam-brown">{t.crowd.sourceLead}</span>
+        {t.crowd.sourceMiddle}
+        <span className="font-semibold">{t.crowd.sourceStrong}</span>
+        {t.crowd.sourceTail}
       </p>
     </div>
   );

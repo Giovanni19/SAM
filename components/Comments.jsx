@@ -139,7 +139,8 @@ export default function Comments({ placeId, spaceType }) {
 
     setPending(true);
     setError(null);
-    const userName = user.user_metadata?.full_name || user.email?.split("@")[0] || "Utente SAM";
+    const userName =
+      user.user_metadata?.full_name || user.email?.split("@")[0] || t.comments.defaultUserName;
     const { data: inserted, error: insertError } = await supabase
       .from("comments")
       .insert({

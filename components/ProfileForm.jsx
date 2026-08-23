@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { OCCUPATIONS, MILAN_UNIVERSITIES, AGE_RANGES } from "@/lib/profile";
+import { OCCUPATIONS, MILAN_UNIVERSITIES, AGE_RANGES, UNIVERSITY_OTHER } from "@/lib/profile";
+import { useI18n } from "@/components/I18nProvider";
 
 const inputClass =
   "w-full rounded-xl border border-sam-cream bg-sam-paper px-4 py-2.5 text-sm outline-none focus:border-sam-green";
@@ -11,6 +12,7 @@ const inputClass =
 // Salva sia nei metadata utente (usati dall'app) sia nella tabella profiles
 // (usata per le analytics), così restano allineati.
 export default function ProfileForm({ userId, email, initial, consentAnalytics = false }) {
+  const { t } = useI18n();
   const [firstName, setFirstName] = useState(initial.first_name || "");
   const [lastName, setLastName] = useState(initial.last_name || "");
   const [occupation, setOccupation] = useState(initial.occupation || "");
@@ -46,7 +48,7 @@ export default function ProfileForm({ userId, email, initial, consentAnalytics =
     const supabase = createClient();
     const { error: authError } = await supabase.auth.updateUser({ data });
     if (authError) {
-      setError("Non è stato possibile salvare. Riprova.");
+      setError(t.profile.saveError);
       setPending(false);
       return;
     }
@@ -57,7 +59,7 @@ export default function ProfileForm({ userId, email, initial, consentAnalytics =
       .update({ full_name: fullName, first_name: firstName, last_name: lastName, occupation: occ || null, university: uni || null, age_range: age || null })
       .eq("id", userId);
 
-    setMessage("Dati salvati.");
+    setMessage(t.profile.saved);
     setPending(false);
   }
 
@@ -71,11 +73,11 @@ export default function ProfileForm({ userId, email, initial, consentAnalytics =
 
       <div className="grid grid-cols-2 gap-3">
         <label className="block">
-          <span className="mb-1 block text-xs font-semibold text-sam-green">Nome</span>
+          <span className="mb-1 block text-xs font-semibold text-sam-green">{t.auth.firstName}</span>
           <input value={firstName} onChange={(e) => setFirstName(e.target.value)} className={inputClass} />
         </label>
         <label className="block">
-          <span className="mb-1 block text-xs font-semibold text-sam-green">Cognome</span>
+          <span className="mb-1 block text-xs font-semibold text-sam-green">{t.auth.lastName}</span>
           <input value={lastName} onChange={(e) => setLastName(e.target.value)} className={inputClass} />
         </label>
       </div>
@@ -86,7 +88,7 @@ export default function ProfileForm({ userId, email, initial, consentAnalytics =
         <>
           {/* Occupazione */}
           <div>
-            <span className="mb-1 block text-xs font-semibold text-sam-green">Cosa fai?</span>
+            <span className="mb-1 block text-xs font-semibold text-sam-green">{t.auth.occupation}</span>
             <div className="flex flex-wrap gap-2">
               {OCCUPATIONS.map((o) => {
                 const active = occupation === o.value;
@@ -100,7 +102,7 @@ export default function ProfileForm({ userId, email, initial, consentAnalytics =
                       active ? "bg-sam-green text-sam-paper" : "bg-sam-cream text-sam-brown hover:bg-sam-cream/70"
                     }`}
                   >
-                    {o.label}
+                    {t.occupations[o.value] || o.label}
                   </button>
                 );
               })}
@@ -110,11 +112,12 @@ export default function ProfileForm({ userId, email, initial, consentAnalytics =
           {/* Università: solo se studente */}
           {occupation === "studente" && (
             <label className="block">
-              <span className="mb-1 block text-xs font-semibold text-sam-green">Università</span>
+              <span className="mb-1 block text-xs font-semibold text-sam-green">{t.auth.university}</span>
               <select value={university} onChange={(e) => setUniversity(e.target.value)} className={inputClass}>
-                <option value="">Seleziona…</option>
+                <option value="">{t.auth.selectPlaceholder}</option>
                 {MILAN_UNIVERSITIES.map((u) => (
-                  <option key={u} value={u}>{u}</option>
+                  // Il valore salvato resta canonico; solo "Altro" ha un'etichetta tradotta.
+                  <option key={u} value={u}>{u === UNIVERSITY_OTHER ? t.universityOther : u}</option>
                 ))}
               </select>
             </label>
@@ -122,19 +125,18 @@ export default function ProfileForm({ userId, email, initial, consentAnalytics =
 
           {/* Fascia d'età */}
           <label className="block">
-            <span className="mb-1 block text-xs font-semibold text-sam-green">Età</span>
+            <span className="mb-1 block text-xs font-semibold text-sam-green">{t.auth.age}</span>
             <select value={ageRange} onChange={(e) => setAgeRange(e.target.value)} className={inputClass}>
-              <option value="">Preferisco non dirlo</option>
+              <option value="">{t.auth.agePreferNot}</option>
               {AGE_RANGES.map((a) => (
-                <option key={a} value={a}>{a} anni</option>
+                <option key={a} value={a}>{a} {t.auth.ageSuffix}</option>
               ))}
             </select>
           </label>
         </>
       ) : (
         <p className="rounded-xl bg-sam-cream/50 px-3 py-2 text-[11px] text-sam-muted">
-          I campi occupazione, università ed età sono disattivati: puoi abilitarli dando il consenso
-          alle analytics nella sezione “Privacy e dati” qui sotto.
+          {t.profile.consentOff}
         </p>
       )}
 
@@ -142,7 +144,7 @@ export default function ProfileForm({ userId, email, initial, consentAnalytics =
       {message && <p className="text-sm text-sam-green">{message}</p>}
 
       <button type="submit" disabled={pending} className="btn-primary w-full disabled:opacity-60">
-        {pending ? "Salvataggio…" : "Salva modifiche"}
+        {pending ? t.profile.saving : t.profile.save}
       </button>
     </form>
   );

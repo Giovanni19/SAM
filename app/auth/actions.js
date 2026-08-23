@@ -7,15 +7,19 @@ import { createClient } from "@/lib/supabase/server";
 import { PRIVACY_VERSION } from "@/lib/profile";
 
 // Le action con useFormState ricevono (statoPrecedente, formData).
+//
+// Queste action girano lato server, fuori dal contesto di lingua della pagina:
+// non restituiscono testo ma un CODICE (`errorCode` / `messageCode`), che il
+// componente client traduce con authMessage() nella lingua corrente.
 
 export async function login(_prev, formData) {
   const email = String(formData.get("email") || "").trim();
   const password = String(formData.get("password") || "");
-  if (!email || !password) return { error: "Inserisci email e password." };
+  if (!email || !password) return { errorCode: "missingCredentials" };
 
   const supabase = createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { error: traduciErrore(error.message) };
+  if (error) return { errorCode: codiceErrore(error.message) };
 
   revalidatePath("/", "layout");
   redirect("/account");
@@ -28,13 +32,13 @@ export async function signup(_prev, formData) {
   const lastName = String(formData.get("last_name") || "").trim();
   const fullName = [firstName, lastName].filter(Boolean).join(" ");
 
-  if (!email || !password) return { error: "Inserisci email e password." };
-  if (password.length < 6) return { error: "La password deve avere almeno 6 caratteri." };
+  if (!email || !password) return { errorCode: "missingCredentials" };
+  if (password.length < 6) return { errorCode: "passwordTooShort" };
 
   // Consenso obbligatorio all'informativa privacy: senza, niente registrazione.
   const acceptPrivacy = formData.get("accept_privacy") === "on";
   if (!acceptPrivacy) {
-    return { error: "Per registrarti devi accettare l'Informativa privacy." };
+    return { errorCode: "mustAcceptPrivacy" };
   }
 
   // Consenso SEPARATO e facoltativo alle analytics/profilazione. I dati di
@@ -68,14 +72,14 @@ export async function signup(_prev, formData) {
       emailRedirectTo: `${origin}/auth/confirm?next=/account`,
     },
   });
-  if (error) return { error: traduciErrore(error.message) };
+  if (error) return { errorCode: codiceErrore(error.message) };
 
-  return { message: "Ti abbiamo inviato un'email di conferma: aprila per attivare l'account." };
+  return { messageCode: "confirmSent" };
 }
 
 export async function magicLink(_prev, formData) {
   const email = String(formData.get("email") || "").trim();
-  if (!email) return { error: "Inserisci la tua email." };
+  if (!email) return { errorCode: "missingEmail" };
 
   const origin = headers().get("origin");
   const supabase = createClient();
@@ -83,9 +87,9 @@ export async function magicLink(_prev, formData) {
     email,
     options: { emailRedirectTo: `${origin}/auth/confirm?next=/account` },
   });
-  if (error) return { error: traduciErrore(error.message) };
+  if (error) return { errorCode: codiceErrore(error.message) };
 
-  return { message: "Link di accesso inviato! Controlla la tua email." };
+  return { messageCode: "magicSent" };
 }
 
 export async function signout() {
@@ -107,7 +111,7 @@ export async function deleteAccount() {
 
   const { error } = await supabase.rpc("delete_current_user");
   if (error) {
-    return { error: "Non è stato possibile eliminare l'account. Riprova più tardi." };
+    return { errorCode: "deleteFailed" };
   }
 
   await supabase.auth.signOut();
@@ -115,12 +119,13 @@ export async function deleteAccount() {
   redirect("/?deleted=1");
 }
 
-// Messaggi Supabase più comuni in italiano.
-function traduciErrore(msg = "") {
+// I messaggi Supabase arrivano in inglese tecnico: li riconosciamo e li
+// riduciamo a un codice, che il client traduce nella lingua della pagina.
+function codiceErrore(msg = "") {
   const m = msg.toLowerCase();
-  if (m.includes("invalid login credentials")) return "Email o password non corretti.";
-  if (m.includes("email not confirmed")) return "Devi confermare l'email prima di accedere.";
-  if (m.includes("already registered")) return "Esiste già un account con questa email.";
-  if (m.includes("rate limit") || m.includes("too many")) return "Troppi tentativi, riprova tra poco.";
-  return msg || "Si è verificato un errore. Riprova.";
+  if (m.includes("invalid login credentials")) return "invalidCredentials";
+  if (m.includes("email not confirmed")) return "emailNotConfirmed";
+  if (m.includes("already registered")) return "alreadyRegistered";
+  if (m.includes("rate limit") || m.includes("too many")) return "rateLimit";
+  return "generic";
 }

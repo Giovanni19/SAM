@@ -9,8 +9,10 @@ import {
   MILAN_UNIVERSITIES,
   AGE_RANGES,
   ANALYTICS_CONSENT_LABEL,
+  UNIVERSITY_OTHER,
 } from "@/lib/profile";
 import { useI18n } from "@/components/I18nProvider";
+import { getDictionary, authMessage } from "@/lib/i18n";
 
 const inputClass =
   "w-full rounded-xl border border-sam-cream bg-sam-paper px-4 py-2.5 text-sm outline-none focus:border-sam-green";
@@ -26,7 +28,7 @@ function SubmitButton() {
 }
 
 export default function SignupPage() {
-  const { t, href } = useI18n();
+  const { t, href, lang } = useI18n();
   const [state, action] = useFormState(signup, {});
   const [occupation, setOccupation] = useState("");
   // I dati di profilazione si raccolgono SOLO con consenso esplicito e separato.
@@ -63,6 +65,15 @@ export default function SignupPage() {
           {/* --- Profilazione facoltativa, con consenso separato (GDPR) --- */}
           <div className="!mt-5 border-t border-sam-cream pt-4">
             <p className="text-xs font-semibold text-sam-brown">{t.auth.profilingTitle}</p>
+
+            {/* La formula di consenso resta in italiano finché non c'è una
+                versione EN validata legalmente: agli utenti in inglese diamo
+                una nota, come nelle pagine privacy/cookie. */}
+            {lang === "en" && (
+              <p className="mt-2 text-[11px] italic text-sam-muted">
+                {getDictionary("en").legal.consentItalianNotice}
+              </p>
+            )}
 
             <label className="mt-2 flex items-start gap-2">
               <input
@@ -101,7 +112,7 @@ export default function SignupPage() {
                             : "bg-sam-cream text-sam-brown hover:bg-sam-cream/70"
                         }`}
                       >
-                        {o.label}
+                        {t.occupations[o.value] || o.label}
                       </button>
                     );
                   })}
@@ -116,7 +127,8 @@ export default function SignupPage() {
                     <select name="university" defaultValue="" className={inputClass}>
                       <option value="">{t.auth.selectPlaceholder}</option>
                       {MILAN_UNIVERSITIES.map((u) => (
-                        <option key={u} value={u}>{u}</option>
+                        // Il valore salvato resta canonico; solo "Altro" è tradotto.
+                        <option key={u} value={u}>{u === UNIVERSITY_OTHER ? t.universityOther : u}</option>
                       ))}
                     </select>
                   </label>
@@ -153,8 +165,12 @@ export default function SignupPage() {
             </span>
           </label>
 
-          {state?.error && <p className="text-sm text-sam-coral">{state.error}</p>}
-          {state?.message && <p className="text-sm text-sam-green">{state.message}</p>}
+          {state?.errorCode && (
+            <p className="text-sm text-sam-coral">{authMessage(state.errorCode, t)}</p>
+          )}
+          {state?.messageCode && (
+            <p className="text-sm text-sam-green">{authMessage(state.messageCode, t)}</p>
+          )}
 
           <SubmitButton />
         </form>

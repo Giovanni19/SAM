@@ -116,7 +116,11 @@ function normalizeSpace(page) {
     hours: parseHours(getText(p["Orari"])),
     popularTimes: parsePopularTimes(getText(p["Affollamento"])),
     accessNote: getText(p["Note Accesso"]) || null,
+    // Come per le descrizioni, la versione EN esiste solo dove qualcuno l'ha
+    // scritta: spaceNote() in lib/utils.js ripiega sull'italiano.
+    accessNoteEn: getText(p["Note Accesso EN"]) || null,
     bookingNote: getText(p["Note Prenotazione"]) || null,
+    bookingNoteEn: getText(p["Note Prenotazione EN"]) || null,
     bookingUrl: getUrl(p["Prenotazione URL"]) || null,
   };
 }
