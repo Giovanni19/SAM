@@ -21,5 +21,11 @@ build.log
 # vercel
 .vercel
 
-# report locale di scripts/fix-images.mjs
+# report e stato locali degli script di manutenzione foto
 scripts/.fix-images-report.json
+scripts/.recover-chains-report.json
+# checkpoint di serpapi-photos.mjs: tiene i data_id già risolti, così una
+# ripresa non rispreca la quota mensile. È stato della macchina, non del progetto.
+scripts/.serpapi-photos.json
+scripts/refresh-foto.log
+scripts/refresh-foto.err
