@@ -3,10 +3,14 @@ import { getWorkSpaces } from "@/lib/notion";
 import { getZones } from "@/lib/utils";
 import { getDictionary, localeHref, LOCALES } from "@/lib/i18n";
 import SpaceList from "@/components/SpaceList";
+import { selezionaInEvidenza } from "@/lib/featured";
 
 export function generateStaticParams() {
   return LOCALES.map((lang) => ({ lang }));
 }
+
+// Vedi la home: la vetrina ruota ogni lunedì e va rigenerata.
+export const revalidate = 3600;
 
 export function generateMetadata({ params }) {
   const t = getDictionary(params.lang);
@@ -28,7 +32,12 @@ export default async function WorkHomePage({ params }) {
   // SAM for Work mostra i coworking (anche se hanno anche altre categorie).
   const coworking = await getWorkSpaces();
   const zones = getZones(coworking);
-  const featured = coworking.slice(0, 6);
+  // Qui i posti sono tutti coworking, quindi il vincolo sul tipo non serve; e
+  // la permanenza a pagamento è la norma, non un difetto da penalizzare.
+  const featured = selezionaInEvidenza(coworking, {
+    maxPerType: 6,
+    campiStudio: ["wifi", "prese", "sedute", "rumore"],
+  });
 
   return (
     <div>

@@ -3,10 +3,17 @@ import { getStudySpaces } from "@/lib/notion";
 import { getZones } from "@/lib/utils";
 import { getDictionary, localeHref, LOCALES } from "@/lib/i18n";
 import SpaceList from "@/components/SpaceList";
+import { selezionaInEvidenza } from "@/lib/featured";
 
 export function generateStaticParams() {
   return LOCALES.map((lang) => ({ lang }));
 }
+
+// Gli spazi in evidenza cambiano ogni lunedì: senza rigenerazione la home
+// resterebbe ferma alla vetrina del giorno del build. Un'ora è abbastanza
+// frequente da far comparire la nuova selezione il lunedì mattina, e non
+// costa chiamate a Notion (i dati hanno una cache propria di 24 ore).
+export const revalidate = 3600;
 
 export default async function HomePage({ params }) {
   const { lang } = params;
@@ -16,7 +23,7 @@ export default async function HomePage({ params }) {
   // La home di SAM esclude i coworking "puri" (che vivono in SAM for Work).
   const spaces = await getStudySpaces();
   const zones = getZones(spaces);
-  const featured = spaces.slice(0, 6);
+  const featured = selezionaInEvidenza(spaces);
 
   return (
     <div>
