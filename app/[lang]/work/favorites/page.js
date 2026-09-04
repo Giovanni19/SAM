@@ -1,4 +1,4 @@
-import { getWorkSpaces } from "@/lib/notion";
+import { getWorkSpaces } from "@/lib/places";
 import FavoritesGrid from "@/components/FavoritesGrid";
 import { getDictionary, LOCALES } from "@/lib/i18n";
 

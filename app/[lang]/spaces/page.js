@@ -1,4 +1,4 @@
-import { getStudySpaces } from "@/lib/notion";
+import { getStudySpaces } from "@/lib/places";
 import SpacesExplorer from "@/components/SpacesExplorer";
 import { TYPE_META } from "@/lib/utils";
 import { getDictionary, localeHref, LOCALES } from "@/lib/i18n";

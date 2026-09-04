@@ -1,4 +1,4 @@
-import { getSpaces } from "@/lib/notion";
+import { getSpaces } from "@/lib/places";
 import { isStudySpace, isCoworking } from "@/lib/utils";
 import { DEFAULT_LOCALE, LOCALES, localeHref } from "@/lib/i18n";
 

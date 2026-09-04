@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getWorkSpaces } from "@/lib/notion";
+import { getWorkSpaces } from "@/lib/places";
 import { getZones } from "@/lib/utils";
 import { getDictionary, localeHref, LOCALES } from "@/lib/i18n";
 import SpaceList from "@/components/SpaceList";

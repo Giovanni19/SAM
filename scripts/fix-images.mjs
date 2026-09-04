@@ -1,4 +1,5 @@
-// Controlla (e ripara) la property "Foto" del database Notion "Places".
+// Controlla (e ripara) la colonna "image" della tabella Supabase "places"
+// (ex property "Foto" su Notion, migrata il 2026-09-04).
 //
 // Perché serve: gran parte delle foto sono URL di Google Maps del tipo
 // lh3.googleusercontent.com/gps-cs-s/APNQkA... — sono link firmati che dopo
@@ -7,18 +8,15 @@
 // le anteprime social mostrano foto rotte.
 //
 //   node scripts/fix-images.mjs            # solo diagnosi (non tocca nulla)
-//   node scripts/fix-images.mjs --write    # riscansiona E applica su Notion
+//   node scripts/fix-images.mjs --write    # riscansiona E applica su Supabase
 //   node scripts/fix-images.mjs --from-report --write   # applica l'ultima
 //       diagnosi senza riscansionare (più sicuro: scrive solo ciò che hai letto)
-//
-// Dopo un --write conviene rigenerare lo snapshot locale:
-//   node scripts/gen-mock-snapshot.mjs
 //
 // Nota: il rendering è comunque protetto lato app da components/SpaceImage.jsx,
 // che nasconde le foto che non caricano. Questo script serve a tenere PULITI i
 // dati, così le anteprime social (og:image) non puntano a immagini morte.
 
-import { Client } from "@notionhq/client";
+import { createClient } from "@supabase/supabase-js";
 import { readFileSync, statSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -33,7 +31,7 @@ const FROM_REPORT = process.argv.includes("--from-report");
 
 // L'avanzamento va su stderr: se l'output è in pipe verso `head`/`tail` il
 // canale può chiudersi prima della fine e un EPIPE non gestito interromperebbe
-// lo script A METÀ delle scritture su Notion. Meglio ignorare l'errore.
+// lo script A METÀ delle scritture su Supabase. Meglio ignorare l'errore.
 process.stderr.on("error", () => {});
 process.stdout.on("error", () => {});
 const progress = (text) => {
@@ -54,10 +52,10 @@ const env = Object.fromEntries(
     })
 );
 
-const TOKEN = process.env.NOTION_TOKEN || env.NOTION_TOKEN;
-const DB = process.env.NOTION_DATABASE_ID || env.NOTION_DATABASE_ID || "9f852898-1de5-4013-b4bd-383f93e160fd";
-if (!TOKEN) {
-  console.error("NOTION_TOKEN mancante in .env.local");
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SERVICE_ROLE_KEY;
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  console.error("NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY mancanti in .env.local");
   process.exit(1);
 }
 
@@ -332,27 +330,26 @@ async function commonsProposals(name) {
   }
 }
 
-/* --------------------------------- Notion --------------------------------- */
+/* -------------------------------- Supabase -------------------------------- */
 
-const notion = new Client({ auth: TOKEN });
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-const pages = [];
-let cursor;
-do {
-  const res = await notion.databases.query({ database_id: DB, start_cursor: cursor, page_size: 100 });
-  pages.push(...res.results);
-  cursor = res.has_more ? res.next_cursor : undefined;
-} while (cursor);
+const { data: places, error: fetchErr } = await supabase
+  .from("places")
+  .select("id, name, image, website, google_maps");
+if (fetchErr) {
+  console.error("Errore leggendo places da Supabase:", fetchErr.message);
+  process.exit(1);
+}
 
-const rows = pages
+const rows = places
   .map((p) => ({
     pageId: p.id,
-    name: p.properties["Nome"]?.title?.[0]?.plain_text || "",
-    foto: p.properties["Foto"]?.url || null,
-    website: p.properties["Sito Web"]?.url || null,
-    googleMaps: p.properties["Google Maps"]?.url || null,
+    name: p.name || "",
+    foto: p.image || null,
+    website: p.website || null,
+    googleMaps: p.google_maps || null,
   }))
-  .filter((r) => r.name && !r.name.startsWith("ELIMINARE"))
   .sort((a, b) => a.name.localeCompare(b.name, "it"));
 
 const REPORT_PATH = join(ROOT, "scripts", ".fix-images-report.json");
@@ -360,7 +357,7 @@ const REPORT_PATH = join(ROOT, "scripts", ".fix-images-report.json");
 if (FROM_REPORT) {
   const saved = JSON.parse(readFileSync(REPORT_PATH, "utf8"));
   const current = new Map(rows.map((r) => [r.pageId, r]));
-  // Salta le righe cambiate su Notion dopo la diagnosi: applicare un report
+  // Salta le righe cambiate su Supabase dopo la diagnosi: applicare un report
   // vecchio sovrascriverebbe una foto messa a mano nel frattempo.
   const stale = [];
   const toApply = saved.filter((r) => {
@@ -377,25 +374,28 @@ if (FROM_REPORT) {
   console.log(`Applico il report di ${new Date(statSync(REPORT_PATH).mtime).toLocaleString("it-IT")}`);
   console.log(`  ${toApply.filter((r) => r.next).length} foto da impostare`);
   console.log(`  ${toApply.filter((r) => !r.next).length} foto rotte da svuotare`);
-  if (stale.length) console.log(`  ${stale.length} saltate (cambiate su Notion dopo la diagnosi): ${stale.join(", ")}`);
+  if (stale.length) console.log(`  ${stale.length} saltate (cambiate su Supabase dopo la diagnosi): ${stale.join(", ")}`);
 
   if (!WRITE) {
-    console.log("\nAggiungi --write per scrivere davvero su Notion.");
+    console.log("\nAggiungi --write per scrivere davvero su Supabase.");
     process.exit(0);
   }
 
   let n = 0;
   for (const r of toApply) {
-    await notion.pages.update({ page_id: r.pageId, properties: { Foto: { url: r.next } } });
+    const { error } = await supabase
+      .from("places")
+      .update({ image: r.next, updated_at: new Date().toISOString() })
+      .eq("id", r.pageId);
+    if (error) console.error(`\n  errore su ${r.name}:`, error.message);
     n += 1;
     progress(`\r  scritte ${n}/${toApply.length}`);
-    await new Promise((res) => setTimeout(res, 350)); // rate limit Notion: ~3 req/s
   }
-  console.log(`\n\nFatto. Ora rigenera lo snapshot: node scripts/gen-mock-snapshot.mjs`);
+  console.log(`\n\nFatto.`);
   process.exit(0);
 }
 
-console.log(`${rows.length} posti su Notion — controllo le foto…\n`);
+console.log(`${rows.length} posti su Supabase — controllo le foto…\n`);
 
 async function inspect(row) {
   const alive = row.foto ? await isLiveImage(row.foto) : false;
@@ -483,16 +483,19 @@ writeFileSync(join(ROOT, "scripts", ".fix-images-report.json"), JSON.stringify(r
 
 const changes = report.filter((r) => r.next !== r.foto);
 if (!WRITE) {
-  console.log(`\n${changes.length} modifiche da applicare. Rilancia con --write per scriverle su Notion.`);
+  console.log(`\n${changes.length} modifiche da applicare. Rilancia con --write per scriverle su Supabase.`);
   process.exit(0);
 }
 
-console.log(`\nScrivo ${changes.length} modifiche su Notion…`);
+console.log(`\nScrivo ${changes.length} modifiche su Supabase…`);
 let done = 0;
 for (const r of changes) {
-  await notion.pages.update({ page_id: r.pageId, properties: { Foto: { url: r.next } } });
+  const { error } = await supabase
+    .from("places")
+    .update({ image: r.next, updated_at: new Date().toISOString() })
+    .eq("id", r.pageId);
+  if (error) console.error(`\n  errore su ${r.name}:`, error.message);
   done += 1;
   progress(`\r  ${done}/${changes.length}`);
-  await new Promise((res) => setTimeout(res, 350)); // rate limit Notion: ~3 req/s
 }
-console.log(`\nFatto. Ora rigenera lo snapshot: node scripts/gen-mock-snapshot.mjs`);
+console.log(`\nFatto.`);

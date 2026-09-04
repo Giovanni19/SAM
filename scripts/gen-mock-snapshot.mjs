@@ -1,11 +1,14 @@
-// Rigenera lo snapshot locale `lib/mockData.js` dal database Notion "Places".
-// Usa la STESSA normalizzazione di lib/notion.js (tenuta allineata a mano).
+// Rigenera lo snapshot locale `lib/mockData.js` dalla tabella Supabase "places"
+// (ex database Notion "Places", migrato il 2026-09-04 — vedi
+// scripts/migrate-places-to-supabase.mjs). Usa la STESSA normalizzazione di
+// lib/places.js (tenuta allineata a mano).
 //
 //   node scripts/gen-mock-snapshot.mjs
 //
-// Legge NOTION_TOKEN (e opzionale NOTION_DATABASE_ID) da .env.local.
+// Legge NEXT_PUBLIC_SUPABASE_URL/NEXT_PUBLIC_SUPABASE_ANON_KEY da .env.local
+// (basta l'anon key: la tabella ha RLS di sola lettura pubblica).
 
-import { Client } from "@notionhq/client";
+import { createClient } from "@supabase/supabase-js";
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -22,132 +25,64 @@ const env = Object.fromEntries(
     })
 );
 
-const TOKEN = env.NOTION_TOKEN;
-const DB = env.NOTION_DATABASE_ID || "9f852898-1de5-4013-b4bd-383f93e160fd";
-if (!TOKEN) {
-  console.error("NOTION_TOKEN mancante in .env.local");
+const SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error("NEXT_PUBLIC_SUPABASE_URL o NEXT_PUBLIC_SUPABASE_ANON_KEY mancanti in .env.local");
   process.exit(1);
 }
 
-const CATEGORY_TO_TYPE = {
-  cafe: "Caffetteria",
-  library: "Biblioteca",
-  coworking: "Coworking",
-  bookstore: "Libreria",
-};
-
-const CAP_TO_ZONE = {
-  20121: "Brera / Garibaldi", 20122: "Centro", 20123: "Centro", 20124: "Porta Venezia",
-  20125: "Bicocca", 20126: "Bicocca", 20127: "Loreto / NoLo", 20129: "Città Studi",
-  20131: "Città Studi", 20133: "Città Studi", 20135: "Porta Romana", 20136: "Bocconi",
-  20137: "Porta Romana", 20139: "Corvetto", 20141: "Vigentino / Chiesa Rossa",
-  20142: "Barona", 20143: "Navigli", 20144: "Tortona / Porta Genova", 20146: "Giambellino",
-  20151: "Gallaratese", 20154: "Sempione / Sarpi", 20158: "Bovisa", 20159: "Isola",
-};
-
-function deriveZoneFromAddress(address) {
-  if (!address) return "";
-  const cap = address.match(/\b(201\d\d)\b/);
-  return (cap && CAP_TO_ZONE[cap[1]]) || "";
-}
-
-const getText = (p) => p?.title?.[0]?.plain_text || p?.rich_text?.[0]?.plain_text || "";
-const getSelect = (p) => p?.select?.name || "";
-const getMultiSelect = (p) => p?.multi_select?.map((o) => o.name) || [];
-const getNumber = (p) => (typeof p?.number === "number" ? p.number : null);
-const getUrl = (p) => p?.url || "";
-const getPhone = (p) => p?.phone_number || "";
-
-function parseHours(text) {
-  if (!text) return null;
-  const map = { Lun: "mon", Mar: "tue", Mer: "wed", Gio: "thu", Ven: "fri", Sab: "sat", Dom: "sun" };
-  const out = {};
-  for (const part of text.split("|")) {
-    const [label, ...rest] = part.trim().split(":");
-    const key = map[label?.trim()];
-    if (key) out[key] = rest.join(":").trim();
-  }
-  return Object.keys(out).length ? out : null;
-}
-function parsePopularTimes(text) {
-  if (!text) return null;
-  try {
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
-}
-function italianPart(text) {
-  if (!text) return "";
-  return text.split(" / ")[0].trim();
-}
-
-function normalizeSpace(page) {
-  const p = page.properties || {};
-  const address = getText(p["Indirizzo"]);
-  const zone = getSelect(p["Zona"]) || deriveZoneFromAddress(address);
-  const categorie = getMultiSelect(p["Categoria"]);
-  const types = [...new Set(categorie.map((c) => CATEGORY_TO_TYPE[c] || "Altro"))];
-  const description = getText(p["Descrizione IT"]) || italianPart(getText(p["Descrizione"]));
-  const descriptionEn = getText(p["Descrizione EN"]);
-
+/** Converte una riga snake_case della tabella `places` nello shape usato dall'app (vedi lib/places.js). */
+function normalizeRow(row) {
   return {
-    id: page.id.replace(/-/g, ""),
-    name: getText(p["Nome"]),
-    address,
-    zone,
-    types: types.length ? types : ["Altro"],
-    wifi: getSelect(p["WiFi"]) || null,
-    prese: getSelect(p["Prese"]) || null,
-    sedute: getSelect(p["Sedute"]) || null,
-    rumore: getSelect(p["Rumore"]) || null,
-    stayPolicy: getSelect(p["Stay Policy"]) || null,
-    ac: getSelect(p["Aria Condizionata"]) || null,
-    lat: getNumber(p["Latitude"]),
-    lng: getNumber(p["Longitude"]),
-    description,
-    descriptionEn: descriptionEn || null,
-    googleMaps: getUrl(p["Google Maps"]) || null,
-    website: getUrl(p["Sito Web"]) || null,
-    image: getUrl(p["Foto"]) || null,
-    rating: getNumber(p["Rating"]),
-    reviewsCount: getNumber(p["Recensioni"]),
-    phone: getPhone(p["Telefono"]) || null,
-    hours: parseHours(getText(p["Orari"])),
-    popularTimes: parsePopularTimes(getText(p["Affollamento"])),
-    accessNote: getText(p["Note Accesso"]) || null,
-    // Come per le descrizioni, la versione EN esiste solo dove qualcuno l'ha
-    // scritta: spaceNote() in lib/utils.js ripiega sull'italiano.
-    accessNoteEn: getText(p["Note Accesso EN"]) || null,
-    bookingNote: getText(p["Note Prenotazione"]) || null,
-    bookingNoteEn: getText(p["Note Prenotazione EN"]) || null,
-    bookingUrl: getUrl(p["Prenotazione URL"]) || null,
+    id: row.id,
+    name: row.name,
+    address: row.address,
+    zone: row.zone || "",
+    types: row.types && row.types.length ? row.types : ["Altro"],
+    wifi: row.wifi,
+    prese: row.prese,
+    sedute: row.sedute,
+    rumore: row.rumore,
+    stayPolicy: row.stay_policy,
+    ac: row.ac,
+    lat: row.lat,
+    lng: row.lng,
+    description: row.description || "",
+    descriptionEn: row.description_en,
+    googleMaps: row.google_maps,
+    website: row.website,
+    image: row.image,
+    rating: row.rating,
+    reviewsCount: row.reviews_count,
+    phone: row.phone,
+    hours: row.hours,
+    popularTimes: row.popular_times,
+    accessNote: row.access_note,
+    accessNoteEn: row.access_note_en,
+    bookingNote: row.booking_note,
+    bookingNoteEn: row.booking_note_en,
+    bookingUrl: row.booking_url,
   };
 }
 
-const notion = new Client({ auth: TOKEN });
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const { data, error } = await supabase.from("places").select("*");
+if (error) {
+  console.error("Errore leggendo places da Supabase:", error.message);
+  process.exit(1);
+}
 
-const pages = [];
-let cursor;
-do {
-  const res = await notion.databases.query({ database_id: DB, start_cursor: cursor, page_size: 100 });
-  pages.push(...res.results);
-  cursor = res.has_more ? res.next_cursor : undefined;
-} while (cursor);
-
-const spaces = pages
-  .map(normalizeSpace)
-  .filter((s) => s.name && !s.name.startsWith("ELIMINARE"))
-  .sort((a, b) => a.name.localeCompare(b.name, "it"));
+const spaces = data.map(normalizeRow).sort((a, b) => a.name.localeCompare(b.name, "it"));
 
 const byType = {};
 for (const s of spaces) for (const t of s.types) byType[t] = (byType[t] || 0) + 1;
 
 const today = new Date().toISOString().slice(0, 10);
-const header = `// Snapshot REALE del database Notion "Places" (SAM — Study Areas Milano).
+const header = `// Snapshot REALE della tabella Supabase "places" (SAM — Study Areas Milano).
 // Rigenerato il ${today} via \`node scripts/gen-mock-snapshot.mjs\`.
-// Usato come fallback quando l'app non ha un NOTION_TOKEN (USE_MOCK_DATA=true).
-// Lo shape rispecchia l'output di normalizeSpace() in lib/notion.js.
+// Usato come fallback quando l'app non ha config Supabase (USE_MOCK_DATA=true).
+// Lo shape rispecchia l'output di normalizeRow() in lib/places.js.
 `;
 
 const body =

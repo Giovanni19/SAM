@@ -1,10 +1,10 @@
-// Recupera le foto dei posti il cui "Sito Web" su Notion è una homepage
-// condivisa con altre sedi (catene di coworking, portali universitari).
+// Recupera le foto dei posti il cui "website" è una homepage condivisa con
+// altre sedi (catene di coworking, portali universitari). Scrive nella colonna
+// "image" della tabella Supabase "places" (ex property "Foto" su Notion,
+// migrata il 2026-09-04).
 //
 //   node scripts/recover-chains.mjs           # solo diagnosi (non tocca nulla)
-//   node scripts/recover-chains.mjs --write   # scrive le foto trovate su Notion
-//
-// Dopo un --write rigenera lo snapshot: node scripts/gen-mock-snapshot.mjs
+//   node scripts/recover-chains.mjs --write   # scrive le foto trovate su Supabase
 //
 // PERCHÉ SERVE UNO SCRIPT A PARTE da fix-images.mjs: lì lo scraping è generico
 // e parte dal "Sito Web" della riga. Per questi posti quel campo è la homepage
@@ -15,7 +15,7 @@
 // Le foto trovate sono ospitate dai siti stessi: a differenza degli URL di
 // Google Maps non sono link firmati a scadenza.
 
-import { Client } from "@notionhq/client";
+import { createClient } from "@supabase/supabase-js";
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -37,10 +37,10 @@ const env = Object.fromEntries(
     })
 );
 
-const TOKEN = process.env.NOTION_TOKEN || env.NOTION_TOKEN;
-const DB = process.env.NOTION_DATABASE_ID || env.NOTION_DATABASE_ID || "9f852898-1de5-4013-b4bd-383f93e160fd";
-if (!TOKEN) {
-  console.error("NOTION_TOKEN mancante in .env.local");
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SERVICE_ROLE_KEY;
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  console.error("NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY mancanti in .env.local");
   process.exit(1);
 }
 
@@ -213,31 +213,24 @@ const RESOLVER = [
   { nome: "talent-garden", copre: (s) => s.name in TG_SLUG, risolvi: daTalentGarden },
 ];
 
-/* ---------------------------------- Notion -------------------------------- */
+/* -------------------------------- Supabase --------------------------------- */
 
-const notion = new Client({ auth: TOKEN });
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-const pages = [];
-let cursor;
-do {
-  const res = await notion.databases.query({ database_id: DB, start_cursor: cursor, page_size: 100 });
-  pages.push(...res.results);
-  cursor = res.has_more ? res.next_cursor : undefined;
-} while (cursor);
+const { data: places, error: fetchErr } = await supabase.from("places").select("id, name, image");
+if (fetchErr) {
+  console.error("Errore leggendo places da Supabase:", fetchErr.message);
+  process.exit(1);
+}
 
-const rows = pages
-  .map((p) => ({
-    pageId: p.id,
-    name: p.properties["Nome"]?.title?.[0]?.plain_text || "",
-    foto: p.properties["Foto"]?.url || null,
-  }))
-  .filter((r) => r.name && !r.name.startsWith("ELIMINARE"))
+const rows = places
+  .map((p) => ({ pageId: p.id, name: p.name || "", foto: p.image || null }))
   .sort((a, b) => a.name.localeCompare(b.name, "it"));
 
 const daFare = rows.filter((r) => !r.foto && RESOLVER.some((x) => x.copre(r)));
 console.log(`${rows.length} posti, ${rows.filter((r) => !r.foto).length} senza foto.`);
 console.log(`Coperti da un resolver: ${daFare.length}\n`);
-if (!WRITE) console.log("(diagnosi: non scrive nulla su Notion — aggiungi --write)\n");
+if (!WRITE) console.log("(diagnosi: non scrive nulla su Supabase — aggiungi --write)\n");
 
 const esiti = [];
 for (const space of daFare) {
@@ -263,14 +256,17 @@ console.log(`\n${trovate.length} foto trovate su ${daFare.length} posti.`);
 writeFileSync(join(ROOT, "scripts", ".recover-chains-report.json"), JSON.stringify(esiti, null, 2));
 
 if (!WRITE) {
-  console.log("Rilancia con --write per scriverle su Notion.");
+  console.log("Rilancia con --write per scriverle su Supabase.");
   process.exit(0);
 }
 
 let n = 0;
 for (const e of trovate) {
-  await notion.pages.update({ page_id: e.pageId, properties: { Foto: { url: e.url } } });
+  const { error } = await supabase
+    .from("places")
+    .update({ image: e.url, updated_at: new Date().toISOString() })
+    .eq("id", e.pageId);
+  if (error) console.log(`  errore su ${e.name}: ${error.message}`);
   n += 1;
-  await new Promise((r) => setTimeout(r, 350)); // rate limit Notion: ~3 req/s
 }
-console.log(`\n${n} foto scritte. Ora rigenera lo snapshot: node scripts/gen-mock-snapshot.mjs`);
+console.log(`\n${n} foto scritte.`);

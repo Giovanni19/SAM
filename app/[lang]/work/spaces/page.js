@@ -1,4 +1,4 @@
-import { getWorkSpaces } from "@/lib/notion";
+import { getWorkSpaces } from "@/lib/places";
 import SpacesExplorer from "@/components/SpacesExplorer";
 import { getDictionary, localeHref, LOCALES } from "@/lib/i18n";
 

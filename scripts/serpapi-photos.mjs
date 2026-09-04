@@ -1,8 +1,9 @@
-// Riempie la property "Foto" dei posti che ne sono rimasti senza, prendendo la
-// foto da Google Maps tramite SerpApi.
+// Riempie la colonna "image" della tabella Supabase "places" (ex property
+// "Foto" su Notion, migrata il 2026-09-04) per i posti che ne sono rimasti
+// senza, prendendo la foto da Google Maps tramite SerpApi.
 //
 //   node scripts/serpapi-photos.mjs              # solo diagnosi (non tocca nulla)
-//   node scripts/serpapi-photos.mjs --write      # scrive le foto trovate su Notion
+//   node scripts/serpapi-photos.mjs --write      # scrive le foto trovate su Supabase
 //   node scripts/serpapi-photos.mjs --limit 20   # ferma dopo 20 posti (per provare)
 //   node scripts/serpapi-photos.mjs --refresh --write   # rinnova le foto scadute
 //
@@ -10,8 +11,6 @@
 // URL che Google serve oggi sono firmati e scadono nel giro di settimane o
 // mesi. Il piano free si rinnova ogni mese e il refresh costa una ricerca a
 // posto, quindi il giro sta comodamente nella quota gratuita.
-//
-// Dopo un --write rigenera lo snapshot: node scripts/gen-mock-snapshot.mjs
 //
 // PERCHÉ DUE MOTORI DIVERSI, ed è il punto centrale di questo script:
 // il motore `google_maps` restituisce miniature tipo lh3.../gps-cs-s/... che
@@ -26,7 +25,7 @@
 // dà il ritmo di conseguenza, e salva un checkpoint dopo ogni posto per
 // riprendere dopo un'interruzione senza risprecare ricerche.
 
-import { Client } from "@notionhq/client";
+import { createClient } from "@supabase/supabase-js";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -61,14 +60,14 @@ const env = Object.fromEntries(
 );
 
 const SERP_KEY = process.env.SERPAPI_KEY || env.SERPAPI_KEY;
-const TOKEN = process.env.NOTION_TOKEN || env.NOTION_TOKEN;
-const DB = process.env.NOTION_DATABASE_ID || env.NOTION_DATABASE_ID || "9f852898-1de5-4013-b4bd-383f93e160fd";
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SERVICE_ROLE_KEY;
 if (!SERP_KEY) {
   console.error("Manca SERPAPI_KEY in .env.local — prendila da https://serpapi.com/manage-api-key");
   process.exit(1);
 }
-if (!TOKEN) {
-  console.error("NOTION_TOKEN mancante in .env.local");
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  console.error("NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY mancanti in .env.local");
   process.exit(1);
 }
 
@@ -190,33 +189,27 @@ async function trovaFoto(dataId) {
   return null;
 }
 
-/* -------------------------------- Notion ---------------------------------- */
+/* -------------------------------- Supabase --------------------------------- */
 
-const notion = new Client({ auth: TOKEN });
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-const pages = [];
-let cursor;
-do {
-  const res = await notion.databases.query({ database_id: DB, start_cursor: cursor, page_size: 100 });
-  pages.push(...res.results);
-  cursor = res.has_more ? res.next_cursor : undefined;
-} while (cursor);
+const { data: places, error: fetchErr } = await supabase
+  .from("places")
+  .select("id, name, address, image, lat, lng");
+if (fetchErr) {
+  console.error("Errore leggendo places da Supabase:", fetchErr.message);
+  process.exit(1);
+}
 
-const tutti = pages
+const tutti = places
   .map((p) => ({
     pageId: p.id,
-    name: p.properties["Nome"]?.title?.[0]?.plain_text || "",
-    // Stessa lettura di getText() in lib/notion.js: la property è rich_text,
-    // ma alcune righe più vecchie l'hanno come title.
-    address:
-      p.properties["Indirizzo"]?.title?.[0]?.plain_text ||
-      p.properties["Indirizzo"]?.rich_text?.[0]?.plain_text ||
-      "",
-    foto: p.properties["Foto"]?.url || null,
-    lat: p.properties["Latitude"]?.number ?? null,
-    lng: p.properties["Longitude"]?.number ?? null,
+    name: p.name || "",
+    address: p.address || "",
+    foto: p.image || null,
+    lat: p.lat ?? null,
+    lng: p.lng ?? null,
   }))
-  .filter((r) => r.name && !r.name.startsWith("ELIMINARE"))
   .sort((a, b) => a.name.localeCompare(b.name, "it"));
 
 // Il checkpoint evita di ripagare in ricerche i posti già risolti in una
@@ -249,7 +242,7 @@ if (servono > account.rimaste) {
   console.log(`Usa --limit ${Math.floor(account.rimaste / 2)} per fare quello che ci sta ora.\n`);
   process.exit(1);
 }
-if (!WRITE) console.log("(diagnosi: non scrive nulla su Notion — aggiungi --write)\n");
+if (!WRITE) console.log("(diagnosi: non scrive nulla su Supabase — aggiungi --write)\n");
 
 let trovate = 0;
 for (const [i, space] of daFare.entries()) {
@@ -281,8 +274,11 @@ for (const [i, space] of daFare.entries()) {
     console.log(`      ${stabile ? "URL stabile" : "ATTENZIONE: formato a scadenza"} → ${url.slice(0, 100)}`);
 
     if (WRITE) {
-      await notion.pages.update({ page_id: space.pageId, properties: { Foto: { url } } });
-      await sleep(350); // rate limit Notion: ~3 req/s
+      const { error } = await supabase
+        .from("places")
+        .update({ image: url, updated_at: new Date().toISOString() })
+        .eq("id", space.pageId);
+      if (error) console.log(`      errore Supabase: ${error.message}`);
     }
     trovate += 1;
     fatti[space.pageId] = { esito: "ok", url, dataId: match.dataId };
@@ -299,4 +295,4 @@ for (const [i, space] of daFare.entries()) {
 }
 
 console.log(`\n${trovate} foto trovate su ${daFare.length} posti (${ricercheFatte} ricerche SerpApi usate).`);
-console.log(WRITE ? "Ora rigenera lo snapshot: node scripts/gen-mock-snapshot.mjs" : "Rilancia con --write per scriverle su Notion.");
+if (!WRITE) console.log("Rilancia con --write per scriverle su Supabase.");

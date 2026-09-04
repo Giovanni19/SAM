@@ -1,4 +1,4 @@
-import { getWorkSpaces } from "@/lib/notion";
+import { getWorkSpaces } from "@/lib/places";
 import MapView from "@/components/map/MapView";
 import { getDictionary, localeHref, LOCALES } from "@/lib/i18n";
 

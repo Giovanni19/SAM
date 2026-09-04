@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { getSpaceById, getSpaces } from "@/lib/notion";
+import { getSpaceById, getSpaces } from "@/lib/places";
 import { isStudySpace, displayType, spaceMetaDescription } from "@/lib/utils";
 import { getDictionary, localeHref, LOCALES } from "@/lib/i18n";
 import SpaceDetail from "@/components/SpaceDetail";

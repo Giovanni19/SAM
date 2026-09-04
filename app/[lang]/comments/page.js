@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getSpaces } from "@/lib/notion";
+import { getSpaces } from "@/lib/places";
 import { isStudySpace } from "@/lib/utils";
 import MyCommentsList from "@/components/MyCommentsList";
 import { getDictionary, localeHref } from "@/lib/i18n";

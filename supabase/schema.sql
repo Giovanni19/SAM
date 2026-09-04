@@ -230,6 +230,84 @@ $$;
 revoke all on function public.report_comment(uuid) from public, anon;
 grant execute on function public.report_comment(uuid) to authenticated;
 
+-- ---------- LUOGHI (Places) ----------
+-- Catalogo posti (ex Notion, migrato per esaurimento spazio workspace).
+-- id = id della pagina Notion originale, senza trattini (32 hex), per
+-- restare compatibile con favorites.place_id / comments.place_id già
+-- salvati con questo formato. NON generare un nuovo uuid.
+create table if not exists public.places (
+  id               text primary key,
+  name             text not null,
+  address          text,
+  zone             text,
+  types            text[] not null default '{}',
+  wifi             text,
+  prese            text,
+  sedute           text,
+  rumore           text,
+  stay_policy      text,
+  ac               text,
+  lat              double precision,
+  lng              double precision,
+  description      text,
+  description_en   text,
+  google_maps      text,
+  website          text,
+  image            text,
+  rating           double precision,
+  reviews_count    integer,
+  phone            text,
+  hours            jsonb,        -- {mon,tue,...,sun}: "9 AM–12:30 AM" | "Closed" | null
+  popular_times    jsonb,        -- {sun,mon,...,sat}: number[24]
+  access_note      text,
+  access_note_en   text,
+  booking_note     text,
+  booking_note_en  text,
+  booking_url      text,
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now()
+);
+
+alter table public.places enable row level security;
+
+drop policy if exists "places_select_public" on public.places;
+create policy "places_select_public"
+  on public.places for select using (true);
+
+-- Nessuna policy insert/update/delete: le scritture passano SOLO dalla
+-- service-role key (script di migrazione / script di aggiornamento foto),
+-- che bypassa la RLS. Stesso principio già usato per comment_reports
+-- (nessun insert diretto, solo tramite funzione controllata).
+
+create index if not exists places_zone_idx on public.places (zone);
+
+-- =====================================================================
+-- STOP: fin qui esegui subito. Il blocco qui sotto (foreign key) va
+-- eseguito SOLO in un secondo momento, dopo aver popolato `places` con
+-- scripts/migrate-places-to-supabase.mjs e verificato che non ci siano id
+-- orfani in favorites/comments — altrimenti l'ALTER fallisce.
+-- =====================================================================
+
+-- Integrità referenziale con favorites/comments, ora che places esiste.
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'favorites_place_id_fkey'
+  ) then
+    alter table public.favorites
+      add constraint favorites_place_id_fkey
+      foreign key (place_id) references public.places (id) on delete cascade;
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint where conname = 'comments_place_id_fkey'
+  ) then
+    alter table public.comments
+      add constraint comments_place_id_fkey
+      foreign key (place_id) references public.places (id) on delete cascade;
+  end if;
+end $$;
+
 -- ---------- LIKE COMMENTI ----------
 -- Un like per utente per commento (PK composita, come le segnalazioni).
 -- Il conteggio si legge lato client aggregando le righe: chiunque le legge,
