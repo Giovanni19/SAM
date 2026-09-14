@@ -63,6 +63,7 @@ export default function SpaceDetail({ space, lang, backHref = "/spaces", section
         alt={space.name}
         wrapperClassName="mt-4 h-56 overflow-hidden rounded-2xl sm:h-72"
         className="h-full w-full object-cover"
+        loading="eager"
       />
 
       {/* Hero */}
