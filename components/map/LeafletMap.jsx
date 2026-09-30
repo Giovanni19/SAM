@@ -69,6 +69,30 @@ function FlyTo({ lat, lng, zoom, inset, duration }) {
   return null;
 }
 
+// Vista iniziale su Milano centrata nella parte visibile della mappa. Il
+// pannello si misura dopo il primo render (breakpoint desktop, altezza del
+// pannello su telefono), quindi ricentra quando cambia l'inset — ma solo
+// finché l'utente non ha spostato la mappa e non c'è altro da inquadrare.
+function InitialView({ inset, active }) {
+  const map = useMap();
+  const touched = useRef(false);
+  useEffect(() => {
+    const onTouch = () => { touched.current = true; };
+    map.on("dragstart zoomstart", onTouch);
+    return () => map.off("dragstart zoomstart", onTouch);
+  }, [map]);
+  const left = inset?.left ?? 0;
+  const bottom = inset?.bottom ?? 0;
+  useEffect(() => {
+    if (!active) touched.current = true;
+    if (touched.current) return;
+    const zoom = map.getZoom();
+    const point = map.project(MILAN_CENTER, zoom).add([-left / 2, bottom / 2]);
+    map.setView(map.unproject(point, zoom), zoom, { animate: false });
+  }, [map, left, bottom, active]);
+  return null;
+}
+
 /**
  * @param refPoint  Punto di riferimento opzionale (campus o posizione utente):
  *                  {lat, lng, label, kind: "campus" | "me"}. Disegna il marker,
@@ -105,6 +129,7 @@ export default function LeafletMap({
       {zoomPosition && <ZoomControl key={`zoom-${zoomPosition}`} position={zoomPosition} />}
       <AttributionControl key={`attr-${attributionPosition}`} position={attributionPosition} />
 
+      {inset && <InitialView inset={inset} active={!userPos && !refPoint && !selected} />}
       {userPos && <FlyTo lat={userPos[0]} lng={userPos[1]} zoom={14} inset={inset} duration={0.8} />}
       {refPoint && <FlyTo lat={refPoint.lat} lng={refPoint.lng} zoom={14} inset={inset} duration={0.8} />}
       {selected && <FlyTo lat={selected.lat} lng={selected.lng} inset={inset} duration={0.6} />}
