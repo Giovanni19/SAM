@@ -270,6 +270,14 @@ export default function HomeMap({ spaces, featuredIds = [] }) {
             />
           )}
 
+          <Link
+            href={href("/suggest")}
+            className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-dashed border-sam-green/40 bg-sam-green/5 px-4 py-3 text-sm font-semibold text-sam-green transition hover:bg-sam-green/10"
+          >
+            <span>{t.suggest.homePrompt}</span>
+            <span aria-hidden>→</span>
+          </Link>
+
           <ul className="space-y-2">
             {list.map((s) => (
               <SpaceRow key={s.id} space={s} distanceLabel={distanceLabel(s)} />
