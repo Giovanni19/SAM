@@ -79,7 +79,7 @@ export default function MobileMenu() {
           <Link href={href(`${prefix}/spaces`)} onClick={() => setOpen(false)} className={linkClass}>
             {t.nav.spaces}
           </Link>
-          <Link href={href(`${prefix}/map`)} onClick={() => setOpen(false)} className={linkClass}>
+          <Link href={href(isWork ? "/work/map" : "/")} onClick={() => setOpen(false)} className={linkClass}>
             {t.nav.map}
           </Link>
           <Link href={href(`${prefix}/favorites`)} onClick={() => setOpen(false)} className={linkClass}>

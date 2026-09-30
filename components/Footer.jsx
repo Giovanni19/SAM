@@ -14,6 +14,10 @@ export default function Footer() {
   const isWork = pathname === "/work" || pathname.startsWith("/work/");
   const prefix = isWork ? "/work" : "";
 
+  // La home di SAM è una mappa a tutta altezza: i link del footer stanno in
+  // fondo alla sua lista.
+  if (pathname === "/") return null;
+
   return (
     <footer
       className={`mt-16 border-t border-sam-cream text-sam-paper ${
@@ -43,7 +47,7 @@ export default function Footer() {
           <h4 className="font-display text-sm font-semibold text-sam-paper">{t.footer.explore}</h4>
           <ul className="mt-3 space-y-2 text-sm text-sam-paper/70">
             <li><Link href={href(`${prefix}/spaces`)} className="hover:text-sam-paper">{isWork ? t.footer.allCoworking : t.footer.allSpaces}</Link></li>
-            <li><Link href={href(`${prefix}/map`)} className="hover:text-sam-paper">{t.footer.map}</Link></li>
+            <li><Link href={href(isWork ? "/work/map" : "/")} className="hover:text-sam-paper">{t.footer.map}</Link></li>
             <li><Link href={href(`${prefix}/favorites`)} className="hover:text-sam-paper">{t.footer.favorites}</Link></li>
           </ul>
         </div>

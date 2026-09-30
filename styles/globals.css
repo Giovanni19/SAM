@@ -69,3 +69,10 @@
 .theme-work .btn-primary:hover { background-color: #5C2230; }
 .theme-work .btn-outline { color: #7A2E3A; border-color: rgb(122 46 58 / 0.30); }
 .theme-work .btn-outline:hover { background-color: rgb(122 46 58 / 0.05); }
+
+/* Home su telefono: i filtri coprono la parte alta della mappa e il pannello
+   quella bassa, quindi i crediti OpenStreetMap/CARTO (obbligatori) scendono
+   subito sotto i filtri per restare visibili. */
+@media (max-width: 767px) {
+  .sam-home-map .leaflet-top { top: 7.5rem; }
+}

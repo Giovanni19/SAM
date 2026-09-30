@@ -10,7 +10,6 @@ const BASE_URL = "https://www.studyareasmilan.it";
 const STATIC_PATHS = [
   { path: "/", priority: 1 },
   { path: "/spaces", priority: 0.9 },
-  { path: "/map", priority: 0.6 },
   { path: "/privacy", priority: 0.3 },
   { path: "/cookie", priority: 0.3 },
   { path: "/work", priority: 1 },

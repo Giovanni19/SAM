@@ -53,7 +53,7 @@ export default function Header() {
             {t.nav.spaces}
           </Link>
           <Link
-            href={href(`${prefix}/map`)}
+            href={href(isWork ? "/work/map" : "/")}
             className="rounded-full px-3 py-2 text-sm font-semibold text-sam-brown transition hover:bg-sam-cream"
           >
             {t.nav.map}
