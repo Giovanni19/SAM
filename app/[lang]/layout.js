@@ -4,6 +4,7 @@ import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import SamGuide from "@/components/SamGuide";
 import FavoritesProvider from "@/components/FavoritesProvider";
 import AuthPromptProvider from "@/components/AuthPrompt";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
@@ -145,6 +146,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               <Header />
               <main className="flex-1">{children}</main>
               <Footer />
+              <SamGuide />
             </AuthPromptProvider>
           </FavoritesProvider>
           <CookieConsentBanner />
