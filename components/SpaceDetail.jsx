@@ -94,7 +94,7 @@ export default function SpaceDetail({ space, lang, backHref = "/spaces", section
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div data-tour="actions" className="flex items-center gap-2">
           <ShareButton url={canonicalUrl} title={space.name} text={description} />
           <FavoriteButton spaceId={space.id} />
         </div>
@@ -137,7 +137,7 @@ export default function SpaceDetail({ space, lang, backHref = "/spaces", section
           <h2 className="mt-8 font-display text-xl font-bold text-sam-green">
             {amenitiesTitle}
           </h2>
-          <ul className="mt-3 divide-y divide-sam-cream rounded-2xl border border-sam-cream bg-white">
+          <ul data-tour="amenities" className="mt-3 divide-y divide-sam-cream rounded-2xl border border-sam-cream bg-white">
             {amenities.map((a) => {
               const tone = TONE[a.tone] || TONE.mid;
               return (
@@ -155,7 +155,7 @@ export default function SpaceDetail({ space, lang, backHref = "/spaces", section
 
           <div className="mt-8">
             <h2 className="font-display text-xl font-bold text-sam-green">{t.detail.crowding}</h2>
-            <div className="mt-3">
+            <div data-tour="crowd" className="mt-3">
               {space.popularTimes ? (
                 <PopularTimesChart popularTimes={space.popularTimes} />
               ) : (
@@ -166,13 +166,13 @@ export default function SpaceDetail({ space, lang, backHref = "/spaces", section
             </div>
           </div>
 
-          <div className="mt-8">
+          <div data-tour="comments" className="mt-8">
             <Comments placeId={space.id} spaceType={space.type} />
           </div>
         </div>
 
         {/* Sidebar */}
-        <aside className="order-1 space-y-4 lg:order-2">
+        <aside data-tour="info" className="order-1 space-y-4 lg:order-2">
           <div className="rounded-2xl border border-sam-cream bg-white p-5">
             <h3 className="font-display font-semibold text-sam-green">{t.detail.info}</h3>
             <dl className="mt-3 space-y-3 text-sm">
