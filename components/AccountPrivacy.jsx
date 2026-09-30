@@ -69,7 +69,7 @@ export default function AccountPrivacy({ userId, consentAnalytics }) {
   }
 
   return (
-    <div className="mt-10 max-w-md border-t border-sam-cream pt-8">
+    <div className="mt-10 max-w-md border-t border-sam-cream pt-8 lg:mt-6 lg:max-w-none lg:border-t-0 lg:pt-0">
       <h2 className="font-display text-xl font-bold text-sam-green">{t.privacySection.title}</h2>
       <p className="mt-1 text-sm text-sam-muted">
         {t.privacySection.subtitlePre}{" "}

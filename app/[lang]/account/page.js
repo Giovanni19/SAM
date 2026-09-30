@@ -40,31 +40,35 @@ export default async function AccountPage({ params }) {
       <h1 className="font-display text-3xl font-bold text-sam-green">{t.account.greeting(name)}</h1>
       <p className="mt-1 text-sm text-sam-muted">{t.account.subtitle}</p>
 
-      <ProfileForm
-        userId={user.id}
-        email={user.email}
-        consentAnalytics={consentAnalytics}
-        initial={{
-          first_name: m.first_name || "",
-          last_name: m.last_name || "",
-          occupation: m.occupation || "",
-          university: m.university || "",
-          age_range: m.age_range || "",
-        }}
-      />
+      <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-12">
+        <div>
+          <ProfileForm
+            userId={user.id}
+            email={user.email}
+            consentAnalytics={consentAnalytics}
+            initial={{
+              first_name: m.first_name || "",
+              last_name: m.last_name || "",
+              occupation: m.occupation || "",
+              university: m.university || "",
+              age_range: m.age_range || "",
+            }}
+          />
 
-      <div className="mt-4 flex max-w-md flex-col gap-2">
-        <Link href={href("/favorites")} className="btn-outline w-full">
-          {t.account.myFavorites}
-        </Link>
-        <Link href={href("/comments")} className="btn-outline w-full">
-          {t.account.myComments}
-        </Link>
-        <LogoutButton />
+          <div className="mt-4 flex max-w-md flex-col gap-2 lg:max-w-none">
+            <Link href={href("/favorites")} className="btn-outline w-full">
+              {t.account.myFavorites}
+            </Link>
+            <Link href={href("/comments")} className="btn-outline w-full">
+              {t.account.myComments}
+            </Link>
+            <LogoutButton />
+          </div>
+        </div>
+
+        {/* Privacy & controllo dati: consenso, export, cancellazione */}
+        <AccountPrivacy userId={user.id} consentAnalytics={consentAnalytics} />
       </div>
-
-      {/* Privacy & controllo dati: consenso, export, cancellazione */}
-      <AccountPrivacy userId={user.id} consentAnalytics={consentAnalytics} />
     </div>
   );
 }

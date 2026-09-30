@@ -64,7 +64,7 @@ export default function ProfileForm({ userId, email, initial, consentAnalytics =
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-6 max-w-md space-y-3 rounded-2xl border border-sam-cream bg-white p-5 shadow-card">
+    <form onSubmit={handleSubmit} className="mt-6 max-w-md space-y-3 lg:max-w-none rounded-2xl border border-sam-cream bg-white p-5 shadow-card">
       {/* Email: sola lettura (per cambiarla serve una verifica a parte) */}
       <label className="block">
         <span className="mb-1 block text-xs font-semibold text-sam-green">Email</span>
