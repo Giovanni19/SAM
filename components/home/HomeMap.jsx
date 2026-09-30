@@ -223,6 +223,7 @@ export default function HomeMap({ spaces, featuredIds = [] }) {
 
       {/* Telefono: pannello dal basso · Desktop: pannello laterale */}
       <section
+        data-tour="list"
         aria-label={countLabel}
         className={`absolute inset-x-0 bottom-0 z-[1002] flex h-[var(--sheet-h)] flex-col rounded-t-3xl bg-sam-paper shadow-[0_-8px_28px_-6px_rgba(0,0,0,0.22)] md:inset-x-auto md:bottom-5 md:left-5 md:top-5 md:h-auto md:w-[400px] md:rounded-3xl md:shadow-card-hover ${
           dragH == null ? "transition-[height] duration-300 ease-out" : ""
@@ -271,6 +272,7 @@ export default function HomeMap({ spaces, featuredIds = [] }) {
           )}
 
           <Link
+            data-tour="suggest"
             href={href("/suggest")}
             className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-dashed border-sam-green/40 bg-sam-green/5 px-4 py-3 text-sm font-semibold text-sam-green transition hover:bg-sam-green/10"
           >
@@ -314,6 +316,7 @@ function Controls({ floating, refId, onRefChange, geoStatus, type, types, onType
   return (
     <div className="flex flex-col gap-2">
       <label
+        data-tour="near"
         className={`flex h-12 items-center gap-2 rounded-full bg-white pl-4 pr-2 focus-within:ring-2 focus-within:ring-sam-yellow ${
           floating ? "shadow-card-hover" : "border-2 border-sam-green"
         }`}
@@ -347,7 +350,7 @@ function Controls({ floating, refId, onRefChange, geoStatus, type, types, onType
         </p>
       )}
 
-      <div className={`flex gap-2 ${floating ? "-mx-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" : "flex-wrap"}`}>
+      <div data-tour="types" className={`flex gap-2 ${floating ? "-mx-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" : "flex-wrap"}`}>
         {["", ...types].map((value) => {
           const active = type === value;
           const meta = value ? typeMeta(value, t) : null;
