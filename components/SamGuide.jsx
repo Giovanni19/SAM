@@ -75,6 +75,9 @@ export default function SamGuide() {
   const [mode, setMode] = useState("idle");
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState(null);
+  // Mentre la pagina scorre il riquadro segue l'elemento senza animazione:
+  // con l'animazione lo rincorrerebbe a scatti. Si anima solo tra una tappa e l'altra.
+  const [scrolling, setScrolling] = useState(false);
 
   // Alla prima visita di questo tipo di pagina, SAM propone il tour.
   useEffect(() => {
@@ -119,10 +122,18 @@ export default function SamGuide() {
     }
     measure();
     window.addEventListener("resize", measure);
-    window.addEventListener("scroll", measure, { passive: true });
+    let timer;
+    const onScroll = () => {
+      setScrolling(true);
+      clearTimeout(timer);
+      timer = setTimeout(() => setScrolling(false), 150);
+      measure();
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       window.removeEventListener("resize", measure);
-      window.removeEventListener("scroll", measure);
+      window.removeEventListener("scroll", onScroll);
+      clearTimeout(timer);
     };
   }, [mode, measure, stepKey, page]);
 
@@ -164,7 +175,7 @@ export default function SamGuide() {
           onClick={() => setMode("propose")}
           aria-label={t.guide.open}
           title={t.guide.open}
-          className="fixed right-0 top-1/2 z-[1100] flex h-10 w-10 -translate-y-1/2 translate-x-3 items-center justify-center rounded-l-full bg-sam-paper/90 opacity-70 shadow-card ring-1 ring-sam-cream transition hover:translate-x-0 hover:opacity-100 focus-visible:translate-x-0 focus-visible:opacity-100 md:bottom-5 md:right-5 md:top-auto md:h-12 md:w-12 md:translate-x-0 md:translate-y-0 md:rounded-full md:hover:-translate-y-1"
+          className="fixed right-0 top-1/2 z-[1100] flex h-10 w-10 -translate-y-1/2 translate-x-3 items-center justify-center rounded-l-full bg-sam-paper/90 opacity-70 shadow-card md:bg-sam-paper md:opacity-100 ring-1 ring-sam-cream transition hover:translate-x-0 hover:opacity-100 focus-visible:translate-x-0 focus-visible:opacity-100 md:bottom-5 md:right-5 md:top-auto md:h-12 md:w-12 md:translate-x-0 md:translate-y-0 md:rounded-full md:hover:-translate-y-1"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/brand/sam-icon.svg" alt="" className="h-8 w-8 -translate-x-1 md:h-10 md:w-10 md:translate-x-0" />
@@ -208,7 +219,7 @@ export default function SamGuide() {
           <div className="absolute inset-0" onClick={() => close("done")} aria-hidden />
           <div
             aria-hidden
-            className="pointer-events-none absolute rounded-2xl ring-2 ring-sam-yellow transition-all duration-300 ease-out"
+            className={`pointer-events-none absolute rounded-2xl ring-2 ring-sam-yellow ${scrolling ? "" : "transition-all duration-300 ease-out"}`}
             style={
               rect
                 ? { ...rect, boxShadow: "0 0 0 9999px rgba(20, 30, 25, 0.62)" }
@@ -220,7 +231,7 @@ export default function SamGuide() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="sam-tour-title"
-            className="absolute rounded-3xl bg-white p-4 shadow-card-hover transition-all duration-300 ease-out"
+            className={`absolute rounded-3xl bg-white p-4 shadow-card-hover ${scrolling ? "" : "transition-all duration-300 ease-out"}`}
             style={bubble}
           >
             <div className="flex items-start gap-3">
