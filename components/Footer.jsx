@@ -49,6 +49,7 @@ export default function Footer() {
             <li><Link href={href(`${prefix}/spaces`)} className="hover:text-sam-paper">{isWork ? t.footer.allCoworking : t.footer.allSpaces}</Link></li>
             <li><Link href={href(isWork ? "/work/map" : "/")} className="hover:text-sam-paper">{t.footer.map}</Link></li>
             <li><Link href={href(`${prefix}/favorites`)} className="hover:text-sam-paper">{t.footer.favorites}</Link></li>
+            {!isWork && <li><Link href={href("/suggest")} className="hover:text-sam-paper">{t.suggest.cta}</Link></li>}
           </ul>
         </div>
 

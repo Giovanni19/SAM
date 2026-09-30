@@ -332,3 +332,41 @@ create policy "comment_likes_insert_own"
 drop policy if exists "comment_likes_delete_own" on public.comment_likes;
 create policy "comment_likes_delete_own"
   on public.comment_likes for delete using (auth.uid() = user_id);
+
+-- ---------- SUGGERIMENTI DI NUOVI POSTI ----------
+-- Gli utenti registrati propongono un posto con il link di Google Maps e, se
+-- li conoscono, gli stessi campi della tabella places (valori canonici, vedi
+-- lib/utils.js). Restano "pending" finché non li rivede qualcuno del team
+-- dalla dashboard di Supabase: nessuno li legge tranne chi li ha inviati.
+create table if not exists public.place_suggestions (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users (id) on delete cascade,
+  user_email  text,
+  maps_url    text not null check (
+    maps_url ~* '^https://((www\.)?google\.[a-z.]+/maps|maps\.google\.[a-z.]+|maps\.app\.goo\.gl/|goo\.gl/maps/)'
+  ),
+  name        text not null check (char_length(trim(name)) between 1 and 120),
+  type        text,
+  wifi        text,
+  prese       text,
+  sedute      text,
+  rumore      text,
+  stay_policy text,
+  ac          text,
+  note        text check (note is null or char_length(note) <= 500),
+  status      text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists place_suggestions_status_idx on public.place_suggestions (status, created_at desc);
+
+alter table public.place_suggestions enable row level security;
+
+drop policy if exists "place_suggestions_insert_own" on public.place_suggestions;
+create policy "place_suggestions_insert_own"
+  on public.place_suggestions for insert
+  with check (auth.uid() = user_id and status = 'pending');
+
+drop policy if exists "place_suggestions_select_own" on public.place_suggestions;
+create policy "place_suggestions_select_own"
+  on public.place_suggestions for select using (auth.uid() = user_id);

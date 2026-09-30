@@ -277,6 +277,9 @@ export default function HomeMap({ spaces, featuredIds = [] }) {
           </ul>
 
           <div className="mt-5 space-y-3 border-t border-sam-cream pt-4 text-sm">
+            <Link href={href("/suggest")} className="btn-outline w-full">
+              {t.suggest.cta}
+            </Link>
             <Link href={href("/spaces")} className="block font-semibold text-sam-green hover:underline">
               {t.home.allWithFilters}
             </Link>

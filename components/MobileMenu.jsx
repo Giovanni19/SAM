@@ -85,6 +85,11 @@ export default function MobileMenu() {
           <Link href={href(`${prefix}/favorites`)} onClick={() => setOpen(false)} className={linkClass}>
             {t.nav.favorites}
           </Link>
+          {!isWork && (
+            <Link href={href("/suggest")} onClick={() => setOpen(false)} className={linkClass}>
+              {t.suggest.cta}
+            </Link>
+          )}
 
           <div className="my-1 border-t border-sam-cream" />
 
